@@ -1,0 +1,16 @@
+custom_data:
+  abricate_resfinder:
+    id: 'abricate_resfinder'
+    section_name: 'Abricate Results: Resfinder 3.1 Database'
+    plot_type: 'heatmap'
+    format: 'csv'
+    pconfig:
+      id: 'abricate_resfinder'
+      title: 'Abricate Results: ResFinder'
+      xTitle: 'Gene'
+      square: False
+      colstops: [ [0, '#FFFFFF'], [0.6, '#ffffe5'], [0.7, '#d9f0a3'], [0.95, '#004529'], [1, '#000000'], ]
+    sortRows: True
+sp:
+  abricate_resfinder:
+    fn: 'resfinder.summary.csv'
