@@ -1,0 +1,501 @@
+custom_content:
+  order:
+    - mash_results
+    - seqsero_results
+    - abricate_serotypefinder
+    - abricate_ecoh
+    - abricate_resfinder
+    - abricate_ncbi
+    - abricate_argannot
+    - abricate_card
+    - abricate_plasmidfinder
+    - abricate_vfdb
+    - abricate_ecoli_vf
+    - seqyclean_results
+    - CG-Pipeline
+    - raw_clean_scatter
+    - raw_clean_coverage
+    - summary_of_results
+    - summary_of_files
+    - snakemake_benchmarks
+    - file_heatmap
+custom_data:
+  abricate_resfinder:
+    id: 'abricate_resfinder'
+    section_name: 'Abricate Results: Resfinder 3.1 Database'
+    plot_type: 'heatmap'
+    format: 'csv'
+    pconfig:
+      id: 'abricate_resfinder'
+      title: 'Abricate Results: ResFinder'
+      xTitle: 'Gene'
+      square: False
+      colstops: [ [0, '#FFFFFF'], [0.6, '#ffffe5'], [0.7, '#d9f0a3'], [0.95, '#004529'], [1, '#000000'], ]
+    sortRows: True
+  abricate_argannot:
+    id: 'abricate_argannot'
+    section_name: 'Abricate Results: Antibiotic Resistance Gene-ANNOTation'
+    plot_type: 'heatmap'
+    format: 'csv'
+    pconfig:
+      id: 'abricate_argannot'
+      title: 'Abricate Results: ARG-ANNOT'
+      xTitle: 'Gene'
+      square: False
+      colstops: [ [0, '#FFFFFF'], [0.6, '#ffffe5'], [0.7, '#d9f0a3'], [0.95, '#004529'], [1, '#000000'], ]
+    sortRows: True
+  abricate_card:
+    id: 'abricate_card'
+    section_name: 'Abricate Results: The Comprehensive Antibiotic Resistance Database'
+    plot_type: 'heatmap'
+    format: 'csv'
+    pconfig:
+      id: 'abricate_card'
+      title: 'Abricate Results: CARD'
+      xTitle: 'Gene'
+      square: False
+      colstops: [ [0, '#FFFFFF'], [0.6, '#ffffe5'], [0.7, '#d9f0a3'], [0.95, '#004529'], [1, '#000000'], ]
+    sortRows: True
+  abricate_plasmidfinder:
+    id: 'abricate_plasmidfinder'
+    section_name: 'Abricate Results: PlasmidFinder 2.0'
+    plot_type: 'heatmap'
+    format: 'csv'
+    pconfig:
+      id: 'abricate_plasmidfinder'
+      title: 'Abricate Results: Plasmidfinder'
+      xTitle: 'Plasmid'
+      square: False
+      colstops: [ [0, '#FFFFFF'], [0.6, '#ffffe5'], [0.7, '#d9f0a3'], [0.95, '#004529'], [1, '#000000'], ]
+    sortRows: True
+  abricate_vfdb:
+    id: 'abricate_vfdb'
+    section_name: 'Abricate Results: Virulence Factors of Pathogenic Bacteria'
+    plot_type: 'heatmap'
+    format: 'csv'
+    pconfig:
+      id: 'abricate_vfdb'
+      title: 'Abricate Results: VFDB'
+      xTitle: 'Gene'
+      square: False
+      colstops: [ [0, '#FFFFFF'], [0.6, '#ffffe5'], [0.7, '#d9f0a3'], [0.95, '#004529'], [1, '#000000'], ]
+    sortRows: True
+  abricate_ecoli_vf:
+    id: 'abricate_ecoli_vf'
+    section_name: 'Abricate Results: Escherichia coli virulence factors'
+    plot_type: 'heatmap'
+    format: 'csv'
+    pconfig:
+      id: 'abricate_ecoli_vf'
+      title: 'Abricate Results: E. coli virulence factors'
+      xTitle: 'Gene'
+      square: False
+      colstops: [ [0, '#FFFFFF'], [0.6, '#ffffe5'], [0.7, '#d9f0a3'], [0.95, '#004529'], [1, '#000000'], ]
+    sortRows: True
+  abricate_ncbi:
+    id: 'abricate_ncbi'
+    section_name: 'Abricate Results: NCBI Bacterial Antimicrobial Resistance Reference Gene Database'
+    plot_type: 'heatmap'
+    format: 'csv'
+    pconfig:
+      id: 'abricate_ncbi'
+      title: 'Abricate Results: NCBI'
+      xTitle: 'Gene'
+      square: False
+      colstops: [ [0, '#FFFFFF'], [0.6, '#ffffe5'], [0.7, '#d9f0a3'], [0.95, '#004529'], [1, '#000000'], ]
+    sortRows: True
+  abricate_ecoh:
+    id: 'abricate_ecoh'
+    section_name: 'Abricate Results: EcOH'
+    plot_type: 'heatmap'
+    format: 'csv'
+    pconfig:
+      id: 'abricate_ecoh'
+      title: 'Abricate Results: EcOH'
+      xTitle: 'O or H group'
+      square: False
+      colstops: [ [0, '#FFFFFF'], [0.6, '#ffffe5'], [0.7, '#d9f0a3'], [0.95, '#004529'], [1, '#000000'], ]
+    sortRows: True
+  abricate_serotypefinder:
+    id: 'abricate_serotypefinder'
+    section_name: 'Abricate Results: serotypefinder'
+    plot_type: 'heatmap'
+    format: 'csv'
+    pconfig:
+      id: 'abricate_serotypefinder'
+      title: 'Abricate Results: SerotypeFinder'
+      xTitle: 'O or H group'
+      square: False
+      colstops: [ [0, '#FFFFFF'], [0.6, '#ffffe5'], [0.7, '#d9f0a3'], [0.95, '#004529'], [1, '#000000'], ]
+    sortRows: True
+  seqsero_results:
+      id: 'seqsero_results'
+      section_name: 'SeqSero serotyping results'
+      format: 'tsv'
+      plot_type: 'table'
+      pconfig:
+        id: 'seqsero_results'
+        namespace: 'SeqSero results'
+      headers:
+        Input_files:
+          hidden: True
+        O_antigen_prediction:
+          hidden: False
+        H1_antigen_prediction(fliC):
+          hidden: False
+        H2_antigen_prediction(fljB):
+          hidden: False
+        Predicted_antigenic_profile:
+          hidden: False
+        Predicted_serotype(s):
+          hidden: False
+  mash_results:
+    id: 'mash_results'
+    section_name: 'MASH Results'
+    plot_type: 'bargraph'
+    pconfig:
+      id: 'mash_results'
+      title: 'MASH results'
+      ylab: 'Organism counts'
+  seqyclean_results:
+      id: 'seqyclean_results'
+      section_name: 'SeqyClean Results'
+      format: 'csv'
+      plot_type: 'table'
+      pconfig:
+        id: 'seqyclean_results'
+        title: 'SeqyClean Results'
+      headers:
+        PE1:
+          hidden: True
+        PE2:
+          hidden: True
+        Adapters_trim:
+          hidden: True
+        VectorTrim:
+          hidden: True
+        K_mer_size:
+          hidden: True
+        Distance:
+          hidden: True
+        ContamScr:
+          hidden: True
+        kc_size:
+          hidden: True
+        QualTrim:
+          hidden: True
+        Qual_max_avg_error:
+          hidden: True
+        Qual_max_err_at_ends:
+          hidden: True
+        OutputPrefix:
+          hidden: True
+        RepFilename1:
+          hidden: True
+        RepFilename2:
+          hidden: True
+        PE1OutputFilename:
+          hidden: True
+        PE2OutputFilename:
+          hidden: True
+        ShuffledFilename:
+          hidden: True
+        SEFilename:
+          hidden: True
+        Max_align_mismatches:
+          hidden: True
+        MinReadLen:
+          hidden: True
+        new2old_illumina:
+          hidden: True
+        PE1ReadsAn:
+          hidden: False
+        PE1Bases:
+          hidden: False
+        PE1TruSeqAdap_found:
+          hidden: False
+        Perc_PE1TruSeq:
+          hidden: False
+        PE1ReadsWVector_found:
+          hidden: True
+        Perc_PE1ReadsWVector:
+          hidden: True
+        PE1ReadsWContam_found:
+          hidden: False
+        Perc_PE1ReadsWContam:
+          hidden: False
+        PE1LeftTrimmedQual:
+          hidden: False
+        PE1LeftTrimmedVector:
+          hidden: True
+        PE1AvgLeftTrimLen:
+          hidden: False
+        PE1RightTrimmedAdap:
+          hidden: False
+        PE1RightTrimmedQual:
+          hidden: False
+        PE1RightTrimmedVector:
+          hidden: True
+        PE1AvgRightTrimLen:
+          hidden: False
+        PE1DiscardedTotal:
+          hidden: False
+        PE1DiscByContam:
+          hidden: False
+        PE1DiscByLength:
+          hidden: False
+        PE2ReadsAn:
+          hidden: False
+        PE2Bases:
+          hidden: False
+        PE2TruSeqAdap_found:
+          hidden: False
+        Perc_PE2TruSeq:
+          hidden: False
+        PE2ReadsWVector_found:
+          hidden: True
+        Perc_PE2ReadsWVector:
+          hidden: True
+        PE2ReadsWContam_found:
+          hidden: False
+        Perc_PE2ReadsWContam:
+          hidden: False
+        PE2LeftTrimmedQual:
+          hidden: False
+        PE2LeftTrimmedVector:
+          hidden: True
+        PE2AvgLeftTrimLen:
+          hidden: False
+        PE2RightTrimmedAdap:
+          hidden: False
+        PE2RightTrimmedQual:
+          hidden: False
+        PE2RightTrimmedVector:
+          hidden: True
+        PE2AvgRightTrimLen:
+          hidden: False
+        PE2DiscardedTotal:
+          hidden: False
+        PE2DiscByContam:
+          hidden: False
+        PE2DiscByLength:
+          hidden: False
+        PairsKept:
+          hidden: False
+        Perc_Kept:
+          hidden: False
+        Bases:
+          hidden: True
+        Perc_Bases:
+          hidden: True
+        PairsDiscarded:
+          hidden: False
+        Perc_Discarded:
+          hidden: False
+        Bases:
+          hidden: True
+        Perc_Bases:
+          hidden: True
+        SE_PE1_Kept:
+          hidden: False
+        SE_PE1_Bases:
+          hidden: False
+        SE_PE2_Kept:
+          hidden: False
+        SE_PE2_Bases:
+          hidden: False
+        AvgTrimmedLenPE1:
+          hidden: False
+        AvgTrimmedLenPE2:
+          hidden: False
+        perfect_ov:
+          hidden: True
+        partial_ov:
+          hidden: True
+        PolyAT:
+          hidden: True
+        cdna:
+          hidden: True
+        c_err:
+          hidden: True
+        crng:
+          hidden: True
+        left_trimmed_by_polyat1:
+          hidden: True
+        right_trimmed_by_polyat1:
+          hidden: True
+        left_trimmed_by_polyat2:
+          hidden: True
+        right_trimmed_by_polyat2:
+          hidden: True
+        dup_scr:
+          hidden: True
+        duplicates:
+          hidden: True
+        sizedw:
+          hidden: True
+        startdw:
+          hidden: True
+        maxdup:
+          hidden: True
+  summary_of_files:
+    id: 'summary_of_files'
+    section_name: 'File Summary'
+    plot_type: 'table'
+    format: 'tsv'
+  summary_of_results:
+    id: 'summary_of_results'
+    section_name: 'Results Summary'
+    plot_type: 'table'
+    pconfig:
+      id: 'summary_of_results'
+      title: 'summary_of_results: Results'
+    headers:
+      pnusa:
+        hidden: False
+      sample:
+        hidden: False
+      mash_result:
+        hidden: True
+      simple_mash_result:
+        hidden: False
+      seqsero_serotype:
+        hidden: True
+      seqsero_profile:
+        hidden: True
+      simple_seqsero_result:
+        hidden: False
+      cg_cln_coverage:
+        hidden: False
+      cg_raw_coverage:
+        hidden: False
+      fastqc_raw_reads_1:
+        hidden: True
+      fastqc_raw_reads_2:
+        hidden: False
+      fastqc_clean_reads_PE1:
+        hidden: True
+      fastqc_clean_reads_PE2:
+        hidden: False
+      abricate_ecoh_O:
+        hidden: False
+      abricate_ecoh_H:
+        hidden: False
+      abricate_serotype_O:
+        hidden: False
+      abricate_serotype_H:
+        hidden: False
+      argannot:
+        hidden: True
+      resfinder:
+        hidden: True
+      card:
+        hidden: True
+      plasmidfinder:
+        hidden: True
+      vfdb:
+        hidden: True
+      ecoli_vf:
+        hidden: True
+      ncbi:
+        hidden: False
+      stxeae_result:
+        hidden: False
+  raw_clean_scatter:
+    id: 'raw_clean_scatter'
+    section_name: 'Reads Comparison'
+    plot_type: 'scatter'
+    pconfig:
+      id: 'raw_clean_scatter'
+      title: 'Comparison of the number of reads from raw and clean fastq files'
+      xlab: 'Raw fastq reads'
+      ylab: 'Clean fastq reads'
+  raw_clean_coverage:
+    id: 'raw_clean_coverage'
+    section_name: 'Coverage Comparison'
+    plot_type: 'scatter'
+    pconfig:
+      id: 'raw_clean_coverage'
+      title: 'Comparison of the coverage in raw and clean fastq files'
+      xlab: 'Raw fastq coverage'
+      ylab: 'Clean fastq coverage'
+  file_heatmap:
+    id: 'file_heatmap'
+    section_name: 'Missing Files'
+    plot_type: 'heatmap'
+    format: 'csv'
+    pconfig:
+      id: 'file_heatmap'
+      title: 'Files Missing from Analysis'
+      colstops: [ [0, '#000000'], [0.5, '#810f7c'], [1, '#FFFFFF'], ]
+  CG-Pipeline:
+    id: 'CG-Pipeline'
+    section_name: 'GC-Pipeline Results'
+    plot_type: 'table'
+    pconfig:
+      id: 'CG-Pipeline'
+      title: 'GC-Pipeline Results'
+    headers:
+      File:
+        hidden: False
+      avgReadLength:
+        hidden: False
+      totalBases:
+        hidden: False
+      minReadLength:
+        hidden: False
+      maxReadLength:
+        hidden: False
+      avgQuality:numReads:
+        hidden: False
+      PE?:
+        hidden: True
+      coverage:
+        hidden: False
+      readScore:
+        hidden: True
+      medianFragmentLength:
+        hidden: True
+  snakemake_benchmarks:
+    id: 'snakemake_benchmarks'
+    section_name: 'snakemake benchmark timings (in seconds)'
+    plot_type: 'table'
+sp:
+  abricate_resfinder:
+    fn: 'resfinder.summary.csv'
+  abricate_argannot:
+    fn: 'argannot.summary.csv'
+  abricate_card:
+    fn: 'card.summary.csv'
+  abricate_plasmidfinder:
+    fn: 'plasmidfinder.summary.csv'
+  abricate_vfdb:
+    fn: 'vfdb.summary.csv'
+  abricate_ecoli_vf:
+    fn: 'ecoli_vf.summary.csv'
+  abricate_ncbi:
+    fn: 'ncbi.summary.csv'
+  abricate_ecoh:
+    fn: 'ecoh.summary.csv'
+  abricate_serotypefinder:
+    fn: 'serotypefinder.summary.csv'
+  seqsero_results:
+    fn: 'Seqsero_serotype_results.txt'
+  mash_results:
+    fn: 'mash_results.txt'
+  seqyclean_results:
+    fn: 'seqyclean_summary.txt'
+  summary_of_files:
+    fn: 'run_file_summary.txt'
+  summary_of_results:
+    fn: 'run_results_summary.txt'
+  raw_clean_scatter:
+    fn: 'raw_clean_scatter.txt'
+  raw_clean_coverage:
+    fn: 'raw_clean_coverage.txt'
+  file_heatmap:
+    fn: 'File_heatmap.csv'
+  CG-Pipeline:
+    fn: 'cg-pipeline-summary.txt'
+  snakemake_benchmarks:
+    fn: 'benchmark_summary.csv'
