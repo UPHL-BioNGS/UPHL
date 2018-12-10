@@ -12,7 +12,7 @@
 - [abricate](https://github.com/tseemann/abricate)
 
 ## A. The shell scripts and SNAKEMAKE files that connects everything at the Utah Public Health Laboratory
-1. [UPHL_reference_free.sh](UPHL_reference_free.sh): UPHL's reference-free pipeline
+### 1. [UPHL_reference_free.sh](UPHL_reference_free.sh): UPHL's reference-free pipeline
 
 Usage:
 ```
@@ -48,7 +48,7 @@ PARTIAL PIPELINE FLAGS (Does not run full pipeline):
 ```
 
 
-2. [UPHL_reference_free.smk](UPHL_reference_free_smk): UPHL's reference-free pipeline as a set of snakemake rules 
+### 2. [UPHL_reference_free.smk](UPHL_reference_free_smk): UPHL's reference-free pipeline as a set of snakemake rules 
 - (requires [benchmark_multiqc.sh](benchmark_multiqc.sh), [cgpipeline_multiqc.sh](cgpipeline_multiqc.sh), [check_multiqc.sh](check_multiqc.sh), [genome_length_cg.sh](genome_length_cg.sh), [mash_multiqc.sh](mash_multiqc.sh), [multiqc_config_URF_snakemake.yaml](multiqc_config_URF_snakemake.yaml), [seqsero_multiqc.sh](seqsero_multiqc.sh), and [seqyclean_multiqc.sh](seqyclean_multiqc.sh) to be in the same folder as UPHL_reference_free.smk)
 
 Usage:
