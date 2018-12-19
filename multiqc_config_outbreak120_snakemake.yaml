@@ -1,0 +1,33 @@
+custom_content:
+  order:
+    - organism_counts
+    - roary_summary
+    - snakemake_benchmarks
+custom_data:
+  organism_counts:
+    id: 'organism_counts'
+    section_name: 'Kraken Organism Identification'
+    plot_type: 'bargraph'
+    format: 'csv'
+    pconfig:
+      id: 'organism_counts'
+      title: 'Kraken Organism Identification'
+  Roary_summary:
+    id: 'Roary_summary'
+    section_name: 'Roary Summary Statistics'
+    plot_type: 'bargraph'
+    format: 'tsv'
+    pconfig:
+      id: 'Roary_summary'
+      title: 'Roary Summary Statistics'
+  snakemake_benchmarks:
+    id: 'snakemake_benchmarks'
+    section_name: 'snakemake benchmarks'
+    plot_type: 'table'
+sp:
+  organism_counts:
+    fn: 'Roary_qc_report.csv'
+  Roary_summary:
+    fn: 'Roary_summary_statistics.txt'
+  snakemake_benchmarks:
+    fn: 'benchmark_summary.csv'
