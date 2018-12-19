@@ -11,6 +11,12 @@
 - [seqsero](https://github.com/denglab/SeqSero)
 - [abricate](https://github.com/tseemann/abricate)
 
+##### To turn this data into trees, the gff files generated with prokka are put through roary and iqtree with visualization done with ggtree (in R)
+- [roary](https://github.com/sanger-pathogens/Roary)
+- [iqtree](http://www.iqtree.org/)
+- [ape](https://cran.r-project.org/web/packages/ape/index.html)
+- [ggtree](http://bioconductor.org/packages/release/bioc/html/ggtree.html)
+
 ## A. The shell scripts and SNAKEMAKE files that connects everything at the Utah Public Health Laboratory
 ### 1. [UPHL_reference_free.sh](UPHL_reference_free.sh): UPHL's reference-free pipeline
 
@@ -62,6 +68,50 @@ There are two variables that will need to be adjusted:
 - line 11: mash_sketches="/home/Bioinformatics/Data/RefSeqSketchesDefaults.msh"
 
 
-## B. Helpful ideas and scripts
+### 3 [outbreak_120_organize.sh](outbreak_120_organize.sh) and [OUTBREAK_120_core_trees.smk](OUTBREAK_120_core_trees.smk): UPHL's method of looking through files from the last 120 days.
+- requires [PLOTS_OUTBREAK_120_IQTREE.R](PLOTS_OUTBREAK_120_IQTREE.R), [abricate_organize.sh](abricate_organize.sh), [benchmark120_multiqc.sh](benchmark120_multiqc.sh), [ggtree_plot_organize.sh](ggtree_plot_organize.sh), [multiqc_config_outbreak120_snakemake.yaml](multiqc_config_outbreak120_snakemake.yaml), [organism_multiqc.sh](organism_multiqc.sh), and [roary_multiqc.sh](roary_multiqc.sh)
+
+Usage:
+```
+./outbreak_120_organize.sh -i <location of serotyping and gff files> -o <path to final directory>
+
+snakemake --snakefile OUTBREAK_120_core_trees.smk --directory <path to final directory>
+
+```
+Full list of options for outbreak_120_organize.sh
+```
+OUTBREAK_120 looks through a directory (or directories) for contig files.
+
+REQUIRED OPTIONS:
+
+-i <path to look through for input files>
+
+OUTBREAK_120 will search this directory for files matching the following patterns:
+Prokka files:     <path>/*/ALL_gff/NAME.gff
+Mash files:       <path>/*/mash/NAME*.sorted.txt
+SeqSero files:    <path>/*/SeqSero/NAME.Seqsero_result.txt
+Abricate results: <path>/*/abricate_results/database/database.NAME.out.txt
+
+-o <path for outfolder>
+
+OPTIONAL OPTIONS:
+
+-e <file>                 List of sample names to be removed from analysis if found.
+-t mash/seqsero/abricate  Restrict results to specific analysis.
+-p <species>              Restrict results to species in mash results.
+-s <yyyy-mm-dd>           Specify end date.
+-d <number of days>       Specify number of days prior to end date (default is 120)
+-m <number of samples>    Adjust maximum number of samples (default is 100)
+-a                        Evaluates all subfolders, not just those with samples less than 10 days old.
+-P <PATH>                 Add path to PATH. Can be used to specify multiple paths.
+```
+
+There is one variable in the snakemake file that will need to be adjusted:
+- line 9: kraken_mini_db="/home/IDGenomics_NAS/kraken_mini_db/minikraken_20141208"
+
+Additionally, the controls with paths in [outbreak_120_organize.sh](outbreak_120_organize.sh) will have to be adjusted. These are reference genomes downloaded from ncbi and run through prokka.
+
+
+## B. Other ideas and scripts
 
 1. Turning ABRICATE results into something multiqc-parsable with the following [BASH commands](abricate_to_multiqc_heatmap.sh) and associated [multiqc_config](abricate_multiqc_config_options.yaml) options
