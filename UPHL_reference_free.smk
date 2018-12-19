@@ -14,7 +14,7 @@ DATABASE = ['argannot', 'resfinder', 'card', 'plasmidfinder', 'vfdb', 'ecoli_vf'
 
 rule all:
     input:
-        # copying files over
+    # copying files over
         expand("Sequencing_reads/Raw/{sample}_{middle}.f{extension}", zip, sample=SAMPLE, middle=MIDDLE, extension=EXTENSION),
         # running seqyclean
         expand("Sequencing_reads/QCed/{sample}_clean_PE1.fastq", sample=SAMPLE),
@@ -119,7 +119,7 @@ rule shovill:
     input:
         read1="Sequencing_reads/QCed/{sample}_clean_PE1.fastq",
         read2="Sequencing_reads/QCed/{sample}_clean_PE2.fastq"
-   threads:
+    threads:
         48
     log:
         "logs/shovill/{sample}.log"
@@ -187,7 +187,7 @@ rule mash_dist:
         48
     params:
         mash_sketches
-   log:
+    log:
         "logs/mash_dist/{sample}.log"
     benchmark:
         "logs/benchmark/mash_dist/{sample}.log"
@@ -272,7 +272,7 @@ rule prokka_move:
 rule quast:
     input:
         "ALL_assembled/{sample}_contigs.fa"
-   output:
+    output:
         "quast/{sample}/report.html",
         "quast/{sample}/report.tsv",
         "quast/{sample}/transposed_report.tex",
@@ -309,7 +309,7 @@ rule GC_pipeline_shuffle_raw:
     input:
         read1= get_read1,
         read2= get_read2
-   output:
+    output:
         "Sequencing_reads/shuffled/{sample}_raw_shuffled.fastq.gz"
     log:
         "logs/gc_pipeline_shuffle_raw/{sample}.log"
