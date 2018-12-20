@@ -3,26 +3,24 @@ from pathlib import Path
 import glob
 import os, os.path
 import fnmatch
-#snakemake --snakefile /home/eyoung/sandbox/UPHL/UPHL_reference_free.smk --directory /home/IDGenomics_NAS/WGS_Serotyping/UT-M03999-181210 --cores 24 --rerun-incomplete
+
 DATE=str(datetime.date.today())
 working_directory=os.getcwd()
 kraken_mini_db="/home/IDGenomics_NAS/kraken_mini_db/minikraken_20141208"
 
 ANALYSIS_TYPE, GENUS, SPECIES= glob_wildcards('{ANALYSIS_TYPE}/{GENUS}/{SPECIES}/list_of_samples.txt')
-
-ruleorder: abricate>roary>iqtree
+ruleorder: abricate>roary>iqtree>ggtree_create
 
 def find_gff_files(wildcards):
     gff_files=glob.glob(wildcards.analysis_type + "/" + wildcards.genus + "/" + wildcards.species + "/*gff" )
     return(gff_files)
 
-def find_core_genome(wildcards):
-    core_genome=glob.glob(wildcards.analysis_type + "/" + wildcards.genus + "/" + wildcards.species + "/Roary_out*/core_gene_alignment.aln" )
-    return(core_genome[0])
-
-def find_gene_presence(wildcards):
-    core_genome=glob.glob(wildcards.analysis_type + "/" + wildcards.genus + "/" + wildcards.species + "/Roary_out*/gene_presence_absence.Rtab" )
-    return(core_genome[0])
+#def find_core_genome(wildcards):
+#    core_genome=glob.glob(wildcards.analysis_type + "/" + wildcards.genus + "/" + wildcards.species + "/Roary_out*/core_gene_alignment.aln" )
+#    return(core_genome[0])
+#def find_gene_presence(wildcards):
+#    core_genome=glob.glob(wildcards.analysis_type + "/" + wildcards.genus + "/" + wildcards.species + "/Roary_out*/gene_presence_absence.Rtab" )
+#    return(core_genome[0])
 
 def control_files(directory):
     control_file=glob.glob(directory + "/*control.gff")
@@ -33,12 +31,12 @@ def control_files(directory):
 
 rule all:
     input:
-        # iqtree
-        expand("{analysis_type}/{genus}/{species}/IQTREE/{genus}.{species}.iqtree.iqtree", zip, analysis_type=ANALYSIS_TYPE, genus=GENUS, species=SPECIES),
         # abricate
         expand("{analysis_type}/{genus}/{species}/ABRICATE/abricate_presence_absence.csv", zip, analysis_type=ANALYSIS_TYPE, genus=GENUS, species=SPECIES),
         # roary
         expand("{analysis_type}/{genus}/{species}/roary.done", zip, analysis_type=ANALYSIS_TYPE, genus=GENUS, species=SPECIES),
+        # iqtree
+        expand("{analysis_type}/{genus}/{species}/IQTREE/{genus}.{species}.iqtree.treefile", zip, analysis_type=ANALYSIS_TYPE, genus=GENUS, species=SPECIES),
         # ggtree
         expand("{analysis_type}/{genus}/{species}/GGTREE/PLOTS_OUTBREAK_120_IQTREE.R", zip, analysis_type=ANALYSIS_TYPE, genus=GENUS, species=SPECIES),
         expand("{analysis_type}/{genus}/{species}/GGTREE/{analysis_type}.{genus}.{species}.abricate_resistance.pdf", zip, analysis_type=ANALYSIS_TYPE, genus=GENUS, species=SPECIES),
@@ -65,7 +63,8 @@ rule abricate:
     output:
         "{analysis_type}/{genus}/{species}/ABRICATE/abricate_presence_absence.csv"
     params:
-        base_directory= workflow.basedir
+        base_directory= workflow.basedir,
+        working_directory=working_directory,
     log:
         "logs/abricate_summary/{analysis_type}.{genus}.{species}.log"
     benchmark:
@@ -73,7 +72,7 @@ rule abricate:
     threads:
         1
     shell:
-        "{params.base_directory}/abricate_organize.sh {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species} {output}"
+        "{params.base_directory}/abricate_organize.sh {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species} {output} {params.working_directory}"
 
 rule roary:
     input:
@@ -89,20 +88,22 @@ rule roary:
     threads:
         48
     run:
+        shell("if [ -d \"{wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/Roary_out\" ] ; then rm -R {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/Roary_out ; fi ")
         shell("roary -p {threads} -f {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/Roary_out -e -n -qc -k {params} {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/*.gff --force")
         shell("touch {output}")
 
 rule iqtree:
     input:
-        touch_roary=rules.roary.output,
-        core_genome= find_core_genome,
+        touch_roary= rules.roary.output,
     output:
         "{analysis_type}/{genus}/{species}/IQTREE/{genus}.{species}.iqtree.ckp.gz",
         "{analysis_type}/{genus}/{species}/IQTREE/{genus}.{species}.iqtree.contree",
         "{analysis_type}/{genus}/{species}/IQTREE/{genus}.{species}.iqtree.iqtree",
         "{analysis_type}/{genus}/{species}/IQTREE/{genus}.{species}.iqtree.log",
         "{analysis_type}/{genus}/{species}/IQTREE/{genus}.{species}.iqtree.splits.nex",
-        "{analysis_type}/{genus}/{species}/IQTREE/{genus}.{species}.iqtree.treefile",
+        treefile="{analysis_type}/{genus}/{species}/IQTREE/{genus}.{species}.iqtree.treefile",
+    params:
+        core_genome="{analysis_type}/{genus}/{species}/Roary_out/core_gene_alignment.aln"
     log:
         "logs/iqtree/{analysis_type}.{genus}.{species}.log"
     benchmark:
@@ -111,14 +112,15 @@ rule iqtree:
         48
     run:
         control_file= control_files("{wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}")
-        shell("iqtree -s {input.core_genome} -t RANDOM -m GTR+F+I -bb 1000 -alrt 1000 -pre {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/IQTREE/{wildcards.genus}.{wildcards.species}.iqtree -nt AUTO " + control_file)
+        shell("iqtree -s {params.core_genome} -t RANDOM -m GTR+F+I -bb 1000 -alrt 1000 -pre {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/IQTREE/{wildcards.genus}.{wildcards.species}.iqtree -nt AUTO " + control_file)
 
 rule ggtree_create:
     input:
         abricate_result=rules.abricate.output,
-        roary_core_genome= find_core_genome,
-        roary_gene_presence= find_gene_presence,
-        treefile="{analysis_type}/{genus}/{species}/IQTREE/{genus}.{species}.iqtree.treefile",
+        roary_output=rules.roary.output,
+#        roary_core_genome=find_core_genome,
+#        roary_gene_presence=find_gene_presence,
+        treefile=rules.iqtree.output.treefile,
     output:
         "{analysis_type}/{genus}/{species}/GGTREE/PLOTS_OUTBREAK_120_IQTREE.R"
     log:
@@ -131,8 +133,10 @@ rule ggtree_create:
         base_directory=workflow.basedir,
         working_directory=working_directory,
         date=DATE,
+        roary_core_genome="{analysis_type}/{genus}/{species}/Roary_out/core_gene_alignment.aln",
+        roary_gene_presence="{analysis_type}/{genus}/{species}/Roary_out/gene_presence_absence.Rtab",
         nucleotide_distance="{analysis_type}/{genus}/{species}/GGTREE/{analysis_type}.{genus}.{species}.nucleotide_distance",
-        roary_gene_presence="{analysis_type}/{genus}/{species}/GGTREE/{analysis_type}.{genus}.{species}.roary_gene_presence",
+        roary_gene_presence_out="{analysis_type}/{genus}/{species}/GGTREE/{analysis_type}.{genus}.{species}.roary_gene_presence",
         abricate_resistance="{analysis_type}/{genus}/{species}/GGTREE/{analysis_type}.{genus}.{species}.abricate_resistance",
         tree="{analysis_type}/{genus}/{species}/GGTREE/{analysis_type}.{genus}.{species}.tree",
         bootstrap_tree="{analysis_type}/{genus}/{species}/GGTREE/{analysis_type}.{genus}.{species}.bootstrap_tree",
@@ -142,11 +146,11 @@ rule ggtree_create:
         "{params.base_directory}/ggtree_plot_organize.sh "
         "{params.base_directory}/PLOTS_OUTBREAK_120_IQTREE.R "
         "{input.treefile} "
-        "{input.roary_gene_presence} "
-        "{input.roary_core_genome} "
+        "{params.roary_gene_presence} "
+        "{params.roary_core_genome} "
         "{input.abricate_result} "
         "{params.nucleotide_distance} "
-        "{params.roary_gene_presence} "
+        "{params.roary_gene_presence_out} "
         "{params.abricate_resistance} "
         "{wildcards.analysis_type} "
         "{wildcards.genus} "

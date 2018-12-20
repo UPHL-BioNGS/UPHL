@@ -127,12 +127,9 @@ rule shovill:
         "logs/benchmark/shovill/{sample}.log"
     output:
         "shovill_result/{sample}/contigs.fa",
-        "shovill_result/{sample}/contigs.gfa",
-        "shovill_result/{sample}/shovill.corrections",
-        "shovill_result/{sample}/shovill.log",
-        "shovill_result/{sample}/spades.fasta"
-    shell:
-        "shovill --cpu {threads} --ram 200 --outdir shovill_result/{wildcards.sample} --R1 {input.read1} --R2 {input.read2} --force"
+    run:
+        shell("shovill --cpu {threads} --ram 200 --outdir shovill_result/{wildcards.sample} --R1 {input.read1} --R2 {input.read2} --force || true ")
+        shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
 
 rule shovill_move:
     input:
@@ -232,18 +229,7 @@ rule prokka:
     threads:
         48
     output:
-        "Prokka/{sample}/{sample}.err",
-        "Prokka/{sample}/{sample}.fna",
         "Prokka/{sample}/{sample}.gff",
-        "Prokka/{sample}/{sample}.tbl",
-        "Prokka/{sample}/{sample}.faa",
-        "Prokka/{sample}/{sample}.fsa",
-        "Prokka/{sample}/{sample}.log",
-        "Prokka/{sample}/{sample}.tsv",
-        "Prokka/{sample}/{sample}.ffn",
-        "Prokka/{sample}/{sample}.gbk",
-        "Prokka/{sample}/{sample}.sqn",
-        "Prokka/{sample}/{sample}.txt"
     log:
         "logs/prokka/{sample}.log"
     benchmark:
@@ -253,7 +239,9 @@ rule prokka:
     shell:
     	"mash_genus=($(head -n 1 {input.mash_file} | cut -f 1 | awk -F \"-.-\" '{{ print $NF }}' | sed 's/.fna//g' | awk -F \"_\" '{{ print $1 }}' )) ; "
         "mash_spces=($(head -n 1 {input.mash_file} | cut -f 1 | awk -F \"-.-\" '{{ print $NF }}' | sed 's/.fna//g' | awk -F \"_\" '{{ print $2 }}' )) ; "
-        "prokka --cpu {threads} --compliant --centre --UPHL --mincontiglen 500 --outdir Prokka/{wildcards.sample} --locustag locus_tag --prefix {wildcards.sample} --genus $mash_genus --species $mash_spces --force {input.contig_file}"
+        "prokka --cpu {threads} --compliant --centre --UPHL --mincontiglen 500 --outdir Prokka/{wildcards.sample} --locustag locus_tag --prefix {wildcards.sample} --genus $mash_genus --species $mash_spces --force {input.contig_file} || true "
+        " ; "
+        "if [ ! -f {output} ] ; then touch {output} ; fi  || true"
 
 rule prokka_move:
     input:
@@ -273,23 +261,16 @@ rule quast:
     input:
         "ALL_assembled/{sample}_contigs.fa"
     output:
-        "quast/{sample}/report.html",
-        "quast/{sample}/report.tsv",
-        "quast/{sample}/transposed_report.tex",
-        "quast/{sample}/transposed_report.txt",
-        "quast/{sample}/icarus.html",
-        "quast/{sample}/quast.log",
-        "quast/{sample}/report.tex",
         "quast/{sample}/report.txt",
-        "quast/{sample}/transposed_report.tsv"
     log:
         "logs/quast/{sample}.log"
     benchmark:
         "logs/benchmark/quast/{sample}.log"
     threads:
         1
-    shell:
-      "quast {input} --output-dir quast/{wildcards.sample}"
+    run:
+      shell("quast {input} --output-dir quast/{wildcards.sample} || true ")
+      shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
 
 rule quast_move:
     input:
@@ -351,15 +332,16 @@ rule GC_pipeline:
         base_directory=workflow.basedir
     run:
         if "PNUSAS" in wildcards.sample:
-            shell("run_assembly_readMetrics.pl {input.shuffled_fastq} --fast --numcpus {threads} -e 5000000 > {output}")
+            shell("run_assembly_readMetrics.pl {input.shuffled_fastq} --fast --numcpus {threads} -e 5000000 > {output} || true")
         elif "PNUSAE" in wildcards.sample:
-            shell("run_assembly_readMetrics.pl {input.shuffled_fastq} --fast --numcpus {threads} -e 5000000 > {output}")
+            shell("run_assembly_readMetrics.pl {input.shuffled_fastq} --fast --numcpus {threads} -e 5000000 > {output} || true")
         elif "PNUSAC" in wildcards.sample :
-            shell("run_assembly_readMetrics.pl {input.shuffled_fastq} --fast --numcpus {threads} -e 1600000 > {output}")
+            shell("run_assembly_readMetrics.pl {input.shuffled_fastq} --fast --numcpus {threads} -e 1600000 > {output} || true")
         elif "PNUSAL" in wildcards.sample:
-            shell("run_assembly_readMetrics.pl {input.shuffled_fastq} --fast --numcpus {threads} -e 3000000 > {output}")
+            shell("run_assembly_readMetrics.pl {input.shuffled_fastq} --fast --numcpus {threads} -e 3000000 > {output} || true")
         else:
-            shell("{params.base_directory}/genome_length_cg.sh {input.shuffled_fastq} {input.quast_file} {threads} {output}")
+            shell("{params.base_directory}/genome_length_cg.sh {input.shuffled_fastq} {input.quast_file} {threads} {output} || true")
+        shell("if [ ! -f {output} ] ; then touch {output} ; fi")
 
 rule GC_pipeline_multiqc:
     input:
@@ -436,8 +418,9 @@ rule abricate:
         "logs/benchmark/abricate_{database}/{sample}.log"
     threads:
         1
-    shell:
-        "abricate -db {wildcards.database} {input} > {output}"
+    run:
+        shell("abricate -db {wildcards.database} {input} > {output} || true ")
+        shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
 
 rule abricate_combine:
     input:

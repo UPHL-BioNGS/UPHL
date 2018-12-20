@@ -1,7 +1,7 @@
 #!/bin/bash
 
 out=$1
-echo -e "Sample\tInput_files\tO_antigen_prediction\tH1_antigen_prediction(fliC)\tH2_antigen_prediction(fljB)\tPredicted_antigenic_profile\tPredicted_serotype(s)" > $out/SeqSero/Seqsero_serotype_results.txt
+echo -e "Sample\tInput_files\tO_antigen_prediction\tH1_antigen_prediction(fliC)\tH2_antigen_prediction(fljB)\tPredicted_antigenic_profile\tPredicted_serotype(s)" > $out/SeqSero/Seqsero_serotype_results_all.txt
 RESULTS=$(ls $out/SeqSero/*/Seqsero_result.txt)
 for result in ${RESULTS[@]}
 do
@@ -13,5 +13,6 @@ do
   seqsero_antigenic=$(grep "Predicted antigenic profile" $result | cut -f 2 | tr ' ' '_' )
   seqsero_serotypes=$(grep "Predicted serotype(s)"       $result | cut -f 2 | tr ' ' '_' )
   echo -e "$SAMPLE\t$seqsero_inputfile\t$seqsero_Oantipred\t$seqsero_H1antpred\t$seqsero_H2antpred\t$seqsero_antigenic\t$seqsero_serotypes" >> $out/SeqSero/Seqsero_serotype_results_all.txt
-  grep -v "O--" $out/SeqSero/Seqsero_serotype_results_all.txt >> $out/SeqSero/Seqsero_serotype_results.txt
 done
+
+grep -v "O--" $out/SeqSero/Seqsero_serotype_results_all.txt > $out/SeqSero/Seqsero_serotype_results.txt
