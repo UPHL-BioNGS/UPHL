@@ -192,11 +192,15 @@ rule ggtree_move:
         "results/{analysis_type}.{genus}.{species}.nucleotide_distance.pdf",
         "results/{analysis_type}.{genus}.{species}.roary_gene_presence.pdf",
         "results/{analysis_type}.{genus}.{species}.abricate_resistance.pdf",
+        "logs/results/{analysis_type}.{genus}.{species}.nucleotide_distance_mqc.jpg",
+        "logs/results/{analysis_type}.{genus}.{species}.roary_gene_presence_mqc.jpg",
+        "logs/results/{analysis_type}.{genus}.{species}.abricate_resistance_mqc.jpg",
     log:
         "logs/ggtree_move/{analysis_type}.{genus}.{species}.log"
     benchmark:
         "logs/benchmark/ggtree_move/{analysis_type}.{genus}.{species}.log"
     threads:
         1
-    shell:
-        "cp {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/GGTREE/*pdf results/."
+    run:
+        shell("cp {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/GGTREE/*pdf results/.")
+        shell("cp {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/GGTREE/*_mqc.jpg logs/results/.")

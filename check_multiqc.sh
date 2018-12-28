@@ -61,10 +61,15 @@ do
     if [ -n "$(find $out/$analysis_directory -iname *$pnusa* )" ]
     then
       files=($(find $out/$analysis_directory -iname *$pnusa* ))
-      file=$(echo ${files[@]} | tr ' ' ',' )
-      if [ -z "$file" ]
+      if [ ! -s "${files[0]}" ]
       then
         file="not_found"
+      else
+        file=$(echo ${files[@]} | tr ' ' ',' )
+        if [ -z "$file" ]
+        then
+          file="not_found"
+        fi
       fi
       FILES=("$(echo -e "${FILES[@]}\t$analysis:$file" )")
     else
@@ -112,6 +117,7 @@ do
       fi
     fi
   done
+
   echo "$file_heatmap" >> $out/logs/File_heatmap.csv
   echo "$file_summary" >> $out/run_file_summary.txt
 
@@ -120,7 +126,7 @@ do
   # mash_results
   if [ -n "$(find $out/mash -iname $pnusa*sorted.txt )" ]
   then
-    mash_results=($(head -n 1 $out/mash/$sample*sorted.txt | cut -f 1 | awk -F "-.-" '{ print $NF }' | sed 's/.fna//g' | awk -F "_" '{ print $1 "\t" $2 "\t" $3 "\t" $4 }' ))
+    mash_results=($(cat $out/mash/$sample*sorted.txt | head -n 1 | cut -f 1 | awk -F "-.-" '{ print $NF }' | sed 's/.fna//g' | awk -F "_" '{ print $1 "\t" $2 "\t" $3 "\t" $4 }' ))
     mash_result=$(echo "${mash_results[0]}""_""${mash_results[1]}""_""${mash_results[2]}""_""${mash_results[3]}")
     if [ -z "$mash_result" ]; then mash_result="no_result"; fi
     simple_mash_result=$(echo "${mash_results[0]}""_""${mash_results[1]}")
@@ -170,9 +176,9 @@ do
 
   # fastqc_results
   FASTQC_RESULTS=()
-  if [ -n "$(find $out/fastqc -iname $pnusa*zip )" ]
+  if [ -n "$(find $out/fastqc -iname $sample*zip )" ]
   then
-    fastqc_files=(ls $out/fastqc/$pnusa*zip)
+    fastqc_files=(ls $out/fastqc/$sample*zip)
     for fastqc_file in ${fastqc_files[@]}
     do
       if [ -f "$fastqc_file" ]
@@ -185,10 +191,10 @@ do
         FASTQC_RESULTS=($(echo -e "${FASTQC_RESULTS[@]}\t$fastqc_file:no_result" ))
       fi
     done
-    fastqc_raw_reads_1=$(history -p ${FASTQC_RESULTS[@]} | grep -v "shuffled" | grep -v "clean" | grep -v "ls:no_result" | cut -f 2 -d ":" | head -n 1 )
-    fastqc_raw_reads_2=$(history -p ${FASTQC_RESULTS[@]} | grep -v "shuffled" | grep -v "clean" | grep -v "ls:no_result" | cut -f 2 -d ":" | tail -n 1 )
-    fastqc_clean_reads_PE1=$(history -p ${FASTQC_RESULTS[@]} | grep -v "shuffled" | grep "clean_PE1.fastq" | grep -v "ls:no_result" | cut -f 2 -d ":" )
-    fastqc_clean_reads_PE2=$(history -p ${FASTQC_RESULTS[@]} | grep -v "shuffled" | grep "clean_PE2.fastq" | grep -v "ls:no_result" | cut -f 2 -d ":" )
+    fastqc_raw_reads_1=$(history -p ${FASTQC_RESULTS[@]} | grep $sample | grep -v "shuffled" | grep -v "clean" | grep -v "ls:no_result" | cut -f 2 -d ":" | head -n 1 )
+    fastqc_raw_reads_2=$(history -p ${FASTQC_RESULTS[@]} | grep $sample | grep -v "shuffled" | grep -v "clean" | grep -v "ls:no_result" | cut -f 2 -d ":" | tail -n 1 )
+    fastqc_clean_reads_PE1=$(history -p ${FASTQC_RESULTS[@]} | grep $sample | grep -v "shuffled" | grep "clean_PE1.fastq" | grep -v "ls:no_result" | cut -f 2 -d ":" )
+    fastqc_clean_reads_PE2=$(history -p ${FASTQC_RESULTS[@]} | grep $sample | grep -v "shuffled" | grep "clean_PE2.fastq" | grep -v "ls:no_result" | cut -f 2 -d ":" )
   else
     fastqc_raw_reads_1="no_result"
     fastqc_raw_reads_2="no_result"

@@ -20,6 +20,7 @@ tree_label_data = data.frame(label=tree_label, label2=substr(tree_label,1,regexp
 thetree <- ggtree(tree, size=0.25) %<+% tree_label_data + geom_tiplab(color="black", size=1, aes(label=label2), align=TRUE) + geom_treescale(fontsize=1) + labs(title="TITLEOFTREE", caption="DATEOFRUN")
 thetree
 ggsave("FULLPATHTOTREEIMAGE.pdf", dpi = 900)
+ggsave("FULLPATHTOTREEIMAGE_mqc.jpg", dpi = 900)
 print("The iqtree tree has been created")
 
 # separating bootstraps for iqtree
@@ -36,8 +37,10 @@ bootstrap_tree <- bootstrapped_tree + geom_nodepoint(aes(subset = as.numeric (bo
 UFboot_tree <- bootstrapped_tree + geom_nodepoint(aes(subset = as.numeric (UFboot) > 70, color = UFboot), size = 0.5) + scale_color_continuous(low="yellow", high="black") + labs(subtitle="Nodes labeled with UFboot values") + theme(legend.position="right")
 bootstrap_tree
 ggsave("FULLPATHTOBOOTSTRAPTREEIMAGE.pdf", dpi = 900)
+ggsave("FULLPATHTOBOOTSTRAPTREEIMAGE_mqc.jpg", dpi = 900)
 UFboot_tree
 ggsave("FULLPATHTO_UFBOOT_TREE_IMAGE.pdf", dpi = 900)
+ggsave("FULLPATHTO_UFBOOT_TREE_IMAGE_mqc.jpg", dpi = 900)
 print("Bootstraps have been assigned to iqtree tree")
 
 # finding distances for iqtree
@@ -60,6 +63,7 @@ distance_tree <- distance_tree %<+% df_distance
 distance_tree <- distance_tree + geom_nodepoint(aes(color=mean_clade_distance), size=0.5) + scale_color_continuous(low="yellow", high="black") + labs(subtitle="Nodes labeled with average distance in clade") + theme(legend.position="right")
 distance_tree
 ggsave("FULLPATHTODISTANCETREEIMAGE.pdf", dpi = 900)
+ggsave("FULLPATHTODISTANCETREEIMAGE_mqc.jpg", dpi = 900)
 
 # creating the gene presence/absence heatmap
 print("Reading gene presense/absence table from Roary")
@@ -125,12 +129,15 @@ resist_size <- 0.25
 print("Creating heatmap with tree and gene presence/absence table")
 gheatmap(thetree + xlim_tree(largest_x * 1.2), gene_table, low="white", high = "black", color = FALSE, colnames=FALSE, offset = largest_x * 0.4) + labs(subtitle="Roary gene presence/absence")
 ggsave("FULLPATHTOGENETABLIMAGE.pdf", dpi = 900, width = 4)
+ggsave("FULLPATHTOGENETABLIMAGE_mqc.jpg", dpi = 900, width = 4)
 
 print("Creating heatmap with tree and nucleotide pairwise distance matrix")
 gheatmap(thetree + xlim_tree(largest_x * 1.2), reordered_distances, low="red", high = "black", color = FALSE, colnames = TRUE, colnames_position = "top", colnames_angle = 90, font.size = distance_size, colnames_offset_y = 0, hjust = 0, offset = largest_x * 0.4) + labs(subtitle="Nucleotide pairwise distance matrix")
 ggsave("FULLPATHTODISTANCEIMAGE.pdf", dpi = 900, width = 4)
+ggsave("FULLPATHTODISTANCEIMAGE_mqc.jpg", dpi = 900, width = 4)
 
 print("Creating heatmap with tree and resistence gene presence/absence table")
 gheatmap(thetree + xlim_tree(largest_x * 1.2), resist_table, low="white", high = "black", color = FALSE, colnames = TRUE, colnames_position = "top", colnames_angle = 90, font.size = resist_size, colnames_offset_y = 0, hjust = 0, offset = largest_x * 0.4) + labs(subtitle="Resistence gene presence/absence")
 ggsave("FULLPATHTORESISTENIMAGE.pdf", dpi = 900, width = 4)
+ggsave("FULLPATHTORESISTENIMAGE_mqc.jpg", dpi = 900, width = 4)
 print("saved all iqtree images - complete!")
