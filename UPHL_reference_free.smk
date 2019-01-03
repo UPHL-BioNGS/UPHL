@@ -108,12 +108,12 @@ rule fastqc:
     input:
         "Sequencing_reads/QCed/{sample}_clean_{end}.fastq"
     output:
-        "fastqc/{sample}_clean_{end}_fastqc.zip",
-        "fastqc/{sample}_clean_{end}_fastqc.html"
+        "fastqc/{sample}_clean_{end}_fastqc.zip"
     threads:
         1
-    shell:
-        "fastqc --outdir fastqc --threads {threads} {input}"
+    run:
+        shell("fastqc --outdir fastqc --threads {threads} {input} || true ")
+        shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
 
 rule shovill:
     input:
@@ -172,8 +172,9 @@ rule mash_sketch:
         "logs/benchmark/mash_sketch/{sample}.log"
     threads:
         1
-    shell:
-        "mash sketch -m 2 -p {threads} {input}"
+    run:
+        shell("mash sketch -m 2 -p {threads} {input} || true ")
+        shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
 
 rule mash_dist:
     input:
@@ -188,8 +189,9 @@ rule mash_dist:
         "logs/mash_dist/{sample}.log"
     benchmark:
         "logs/benchmark/mash_dist/{sample}.log"
-    shell:
-        "mash dist -p {threads} {params} {input} > {output}"
+    run:
+        shell("mash dist -p {threads} {params} {input} > {output} || true ")
+        shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
 
 rule mash_sort:
     input:
@@ -237,11 +239,14 @@ rule prokka:
     threads:
         1
     shell:
-    	"mash_genus=($(head -n 1 {input.mash_file} | cut -f 1 | awk -F \"-.-\" '{{ print $NF }}' | sed 's/.fna//g' | awk -F \"_\" '{{ print $1 }}' )) ; "
-        "mash_spces=($(head -n 1 {input.mash_file} | cut -f 1 | awk -F \"-.-\" '{{ print $NF }}' | sed 's/.fna//g' | awk -F \"_\" '{{ print $2 }}' )) ; "
-        "prokka --cpu {threads} --compliant --centre --UPHL --mincontiglen 500 --outdir Prokka/{wildcards.sample} --locustag locus_tag --prefix {wildcards.sample} --genus $mash_genus --species $mash_spces --force {input.contig_file} || true "
-        " ; "
-        "if [ ! -f {output} ] ; then touch {output} ; fi  || true"
+        """
+        if [ -s \"{input.mash_file}\" ]
+        then
+            mash_result=($(head -n 1 {input.mash_file} | cut -f 1 | awk -F \"-.-\" '{{ print $NF }}' | sed 's/.fna//g' | awk -F \"_\" '{{ print $1 \" \" $2 }}' ))
+            prokka --cpu {threads} --compliant --centre --UPHL --mincontiglen 500 --outdir Prokka/{wildcards.sample} --locustag locus_tag --prefix {wildcards.sample} --genus ${{mash_result[0]}} --species ${{mash_result[1]}} --force {input.contig_file} || true
+        fi
+        if [ ! -f {output} ] ; then touch {output} ; fi
+        """
 
 rule prokka_move:
     input:
