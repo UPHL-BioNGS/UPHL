@@ -15,13 +15,6 @@ def find_gff_files(wildcards):
     gff_files=glob.glob(wildcards.analysis_type + "/" + wildcards.genus + "/" + wildcards.species + "/*gff" )
     return(gff_files)
 
-#def find_core_genome(wildcards):
-#    core_genome=glob.glob(wildcards.analysis_type + "/" + wildcards.genus + "/" + wildcards.species + "/Roary_out*/core_gene_alignment.aln" )
-#    return(core_genome[0])
-#def find_gene_presence(wildcards):
-#    core_genome=glob.glob(wildcards.analysis_type + "/" + wildcards.genus + "/" + wildcards.species + "/Roary_out*/gene_presence_absence.Rtab" )
-#    return(core_genome[0])
-
 def control_files(directory):
     control_file=glob.glob(directory + "/*control.gff")
     if len(control_file) > 0 :
@@ -54,6 +47,7 @@ rule all:
         shell("{params.base_directory}/roary_multiqc.sh {params.working_directory}"),
         shell("{params.base_directory}/organism_multiqc.sh {params.working_directory}"),
         # running multiqc
+        shell("which multiqc")
         shell("cp {params.base_directory}/multiqc_config_outbreak120_snakemake.yaml multiqc_config.yaml"),
         shell("multiqc --outdir {params.working_directory}/logs {params.working_directory}/logs"),
 
@@ -71,8 +65,9 @@ rule abricate:
         "logs/benchmark/abricate_summary/{analysis_type}.{genus}.{species}.log"
     threads:
         1
-    shell:
-        "{params.base_directory}/abricate_organize.sh {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species} {output} {params.working_directory}"
+    run:
+        shell("which abricate")
+        shell("{params.base_directory}/abricate_organize.sh {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species} {output} {params.working_directory}")
 
 rule roary:
     input:
@@ -88,6 +83,7 @@ rule roary:
     threads:
         48
     run:
+        shell("which roary")
         shell("if [ -d \"{wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/Roary_out\" ] ; then rm -R {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/Roary_out ; fi ")
         shell("roary -p {threads} -f {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/Roary_out -e -n -qc -k {params} {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/*.gff --force")
         shell("touch {output}")
@@ -111,6 +107,7 @@ rule iqtree:
     threads:
         48
     run:
+        shell("which iqtree")
         control_file= control_files("{wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}")
         shell("iqtree -s {params.core_genome} -t RANDOM -m GTR+F+I -bb 1000 -alrt 1000 -pre {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/IQTREE/{wildcards.genus}.{wildcards.species}.iqtree -nt AUTO " + control_file)
 
@@ -118,8 +115,6 @@ rule ggtree_create:
     input:
         abricate_result=rules.abricate.output,
         roary_output=rules.roary.output,
-#        roary_core_genome=find_core_genome,
-#        roary_gene_presence=find_gene_presence,
         treefile=rules.iqtree.output.treefile,
     output:
         "{analysis_type}/{genus}/{species}/GGTREE/PLOTS_OUTBREAK_120_IQTREE.R"
