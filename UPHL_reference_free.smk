@@ -47,6 +47,7 @@ rule all:
         48
     run:
         # running fastqc
+        shell("which fastqc")
         shell("mkdir -p fastqc")
         shell("fastqc --outdir fastqc --threads {threads} Sequencing_reads/Raw/*.f*"),
         # creating a table from the benchmarks
@@ -54,6 +55,7 @@ rule all:
         # getting the Summary
         shell("{params.base_directory}/check_multiqc.sh {params.output_directory}"),
         # running multiqc
+        shell("which multiqc")
         shell("cp {params.base_directory}/multiqc_config_URF_snakemake.yaml multiqc_config.yaml"),
         shell("multiqc --outdir {params.output_directory}/logs --cl_config \"prokka_fn_snames: True\" {params.output_directory}"),
 
@@ -84,6 +86,7 @@ rule seqyclean:
     benchmark:
         "logs/benchmark/seqyclean/{sample}.log"
     run:
+        shell("which seqyclean")
         shell("seqyclean -minlen 25 -qual -c {params} -1 {input.read1} -2 {input.read2} -o Sequencing_reads/QCed/{wildcards.sample}_clean")
         shell("mv Sequencing_reads/QCed/{wildcards.sample}_clean_SummaryStatistics* Sequencing_reads/Logs/.")
 
@@ -112,6 +115,7 @@ rule fastqc:
     threads:
         1
     run:
+        shell("which fastqc")
         shell("fastqc --outdir fastqc --threads {threads} {input} || true ")
         shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
 
@@ -128,6 +132,7 @@ rule shovill:
     output:
         "shovill_result/{sample}/contigs.fa",
     run:
+        shell("which shovill")
         shell("shovill --cpu {threads} --ram 200 --outdir shovill_result/{wildcards.sample} --R1 {input.read1} --R2 {input.read2} --force || true ")
         shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
 
@@ -173,6 +178,7 @@ rule mash_sketch:
     threads:
         1
     run:
+        shell("which mash")
         shell("mash sketch -m 2 -p {threads} {input} || true ")
         shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
 
@@ -190,6 +196,7 @@ rule mash_dist:
     benchmark:
         "logs/benchmark/mash_dist/{sample}.log"
     run:
+        shell("which mash")
         shell("mash dist -p {threads} {params} {input} > {output} || true ")
         shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
 
@@ -240,6 +247,7 @@ rule prokka:
         1
     shell:
         """
+        which prokka
         if [ -s \"{input.mash_file}\" ]
         then
             mash_result=($(head -n 1 {input.mash_file} | cut -f 1 | awk -F \"-.-\" '{{ print $NF }}' | sed 's/.fna//g' | awk -F \"_\" '{{ print $1 \" \" $2 }}' ))
@@ -274,8 +282,9 @@ rule quast:
     threads:
         1
     run:
-      shell("quast {input} --output-dir quast/{wildcards.sample} || true ")
-      shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
+        shell("which quast")
+        shell("quast {input} --output-dir quast/{wildcards.sample} || true ")
+        shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
 
 rule quast_move:
     input:
@@ -303,8 +312,9 @@ rule GC_pipeline_shuffle_raw:
         "logs/benchmark/gc_pipeline_shuffle_raw/{sample}.log"
     threads:
         1
-    shell:
-        "run_assembly_shuffleReads.pl -gz {input.read1} {input.read2} > {output}"
+    run:
+        shell("which run_assembly_shuffleReads.pl")
+        shell("run_assembly_shuffleReads.pl -gz {input.read1} {input.read2} > {output}")
 
 rule GC_pipeline_shuffle_clean:
     input:
@@ -318,8 +328,9 @@ rule GC_pipeline_shuffle_clean:
         "logs/benchmark/gc_pipeline_shuffle_clean/{sample}.log"
     threads:
         1
-    shell:
-        "run_assembly_shuffleReads.pl -gz {input.read1} {input.read2} > {output}"
+    run:
+        shell("which run_assembly_shuffleReads.pl")
+        shell("run_assembly_shuffleReads.pl -gz {input.read1} {input.read2} > {output}")
 
 rule GC_pipeline:
     input:
@@ -336,6 +347,7 @@ rule GC_pipeline:
     params:
         base_directory=workflow.basedir
     run:
+        shell("which run_assembly_readMetrics.pl")
         if "PNUSAS" in wildcards.sample:
             shell("run_assembly_readMetrics.pl {input.shuffled_fastq} --fast --numcpus {threads} -e 5000000 > {output} || true")
         elif "PNUSAE" in wildcards.sample:
@@ -378,8 +390,9 @@ rule seqsero:
         "logs/benchmark/seqsero/{sample}.log"
     threads:
         1
-    shell:
-        "SeqSero.py -m 2 -d SeqSero/{wildcards.sample} -i {input}"
+    run:
+        shell("which SeqSero.py")
+        shell("SeqSero.py -m 2 -d SeqSero/{wildcards.sample} -i {input}")
 
 rule seqsero_move:
     input:
@@ -424,6 +437,7 @@ rule abricate:
     threads:
         1
     run:
+        shell("which abricate")
         shell("abricate -db {wildcards.database} {input} > {output} || true ")
         shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
 
@@ -438,8 +452,9 @@ rule abricate_combine:
         "logs/benchmark/abricate_combine/{database}.log"
     threads:
         1
-    shell:
-        "abricate --summary abricate_results/{wildcards.database}/{wildcards.database}*tab > {output}"
+    run:
+        shell("which abricate")
+        shell("abricate --summary abricate_results/{wildcards.database}/{wildcards.database}*tab > {output}")
 
 rule abricate_multiqc:
     input:
