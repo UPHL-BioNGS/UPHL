@@ -3,6 +3,7 @@ import os
 import glob
 import shutil
 from os.path import join
+print("UPHL reference free pipeline v.2019.1.4")
 
 base_directory=workflow.basedir
 output_directory=os.getcwd()
@@ -48,6 +49,7 @@ rule all:
     run:
         # running fastqc
         shell("which fastqc")
+        shell("fastqc --version")
         shell("mkdir -p fastqc")
         shell("fastqc --outdir fastqc --threads {threads} Sequencing_reads/Raw/*.f*"),
         # creating a table from the benchmarks
@@ -56,6 +58,7 @@ rule all:
         shell("{params.base_directory}/check_multiqc.sh {params.output_directory}"),
         # running multiqc
         shell("which multiqc")
+        shell("multiqc --version")
         shell("cp {params.base_directory}/multiqc_config_URF_snakemake.yaml multiqc_config.yaml"),
         shell("multiqc --outdir {params.output_directory}/logs --cl_config \"prokka_fn_snames: True\" {params.output_directory}"),
 
@@ -87,6 +90,7 @@ rule seqyclean:
         "logs/benchmark/seqyclean/{sample}.log"
     run:
         shell("which seqyclean")
+        shell("seqyclean | grep \"Version\"")
         shell("seqyclean -minlen 25 -qual -c {params} -1 {input.read1} -2 {input.read2} -o Sequencing_reads/QCed/{wildcards.sample}_clean")
         shell("mv Sequencing_reads/QCed/{wildcards.sample}_clean_SummaryStatistics* Sequencing_reads/Logs/.")
 
@@ -116,6 +120,7 @@ rule fastqc:
         1
     run:
         shell("which fastqc")
+        shell("fastqc --version")
         shell("fastqc --outdir fastqc --threads {threads} {input} || true ")
         shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
 
@@ -133,6 +138,7 @@ rule shovill:
         "shovill_result/{sample}/contigs.fa",
     run:
         shell("which shovill")
+        shell("shovill --version")
         shell("shovill --cpu {threads} --ram 200 --outdir shovill_result/{wildcards.sample} --R1 {input.read1} --R2 {input.read2} --force || true ")
         shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
 
@@ -179,6 +185,7 @@ rule mash_sketch:
         1
     run:
         shell("which mash")
+        shell("mash --version")
         shell("mash sketch -m 2 -p {threads} {input} || true ")
         shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
 
@@ -197,6 +204,7 @@ rule mash_dist:
         "logs/benchmark/mash_dist/{sample}.log"
     run:
         shell("which mash")
+        shell("mash --version")
         shell("mash dist -p {threads} {params} {input} > {output} || true ")
         shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
 
@@ -248,6 +256,7 @@ rule prokka:
     shell:
         """
         which prokka
+        prokka --version
         if [ -s \"{input.mash_file}\" ]
         then
             mash_result=($(head -n 1 {input.mash_file} | cut -f 1 | awk -F \"-.-\" '{{ print $NF }}' | sed 's/.fna//g' | awk -F \"_\" '{{ print $1 \" \" $2 }}' ))
@@ -283,6 +292,7 @@ rule quast:
         1
     run:
         shell("which quast")
+        shell("quast --version")
         shell("quast {input} --output-dir quast/{wildcards.sample} || true ")
         shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
 
@@ -438,6 +448,8 @@ rule abricate:
         1
     run:
         shell("which abricate")
+        shell("abricate --version")
+        shell("abricate --list")
         shell("abricate -db {wildcards.database} {input} > {output} || true ")
         shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
 
@@ -454,6 +466,7 @@ rule abricate_combine:
         1
     run:
         shell("which abricate")
+        shell("abricate --version")
         shell("abricate --summary abricate_results/{wildcards.database}/{wildcards.database}*tab > {output}")
 
 rule abricate_multiqc:

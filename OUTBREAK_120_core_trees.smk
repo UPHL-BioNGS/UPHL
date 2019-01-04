@@ -3,6 +3,7 @@ from pathlib import Path
 import glob
 import os, os.path
 import fnmatch
+print("OUTBREAK_120 v.2019.1.4")
 
 DATE=str(datetime.date.today())
 working_directory=os.getcwd()
@@ -48,6 +49,7 @@ rule all:
         shell("{params.base_directory}/organism_multiqc.sh {params.working_directory}"),
         # running multiqc
         shell("which multiqc")
+        shell("multiqc --version")
         shell("cp {params.base_directory}/multiqc_config_outbreak120_snakemake.yaml multiqc_config.yaml"),
         shell("multiqc --outdir {params.working_directory}/logs {params.working_directory}/logs"),
 
@@ -67,6 +69,7 @@ rule abricate:
         1
     run:
         shell("which abricate")
+        shell("abricate --version")
         shell("{params.base_directory}/abricate_organize.sh {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species} {output} {params.working_directory}")
 
 rule roary:
@@ -84,6 +87,7 @@ rule roary:
         48
     run:
         shell("which roary")
+        shell("roary -w")
         shell("if [ -d \"{wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/Roary_out\" ] ; then rm -R {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/Roary_out ; fi ")
         shell("roary -p {threads} -f {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/Roary_out -e -n -qc -k {params} {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/*.gff --force")
         shell("touch {output}")
@@ -108,6 +112,7 @@ rule iqtree:
         48
     run:
         shell("which iqtree")
+        shell("iqtree --version")
         control_file= control_files("{wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}")
         shell("iqtree -s {params.core_genome} -t RANDOM -m GTR+F+I -bb 1000 -alrt 1000 -pre {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/IQTREE/{wildcards.genus}.{wildcards.species}.iqtree -nt AUTO " + control_file)
 
