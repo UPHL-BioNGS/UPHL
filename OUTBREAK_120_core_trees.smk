@@ -42,8 +42,7 @@ rule all:
         48
     run:
         # creating a table from the benchmarks
-        for directory in expand("{analysis_type}.{genus}.{species}", zip, analysis_type=ANALYSIS_TYPE, genus=GENUS, species=SPECIES):
-            shell("{params.base_directory}/benchmark_multiqc.sh {params.working_directory} " + directory),
+        shell("{params.base_directory}/benchmark_multiqc.sh {params.working_directory}"),
         # roary results
         shell("{params.base_directory}/roary_multiqc.sh {params.working_directory}"),
         shell("{params.base_directory}/organism_multiqc.sh {params.working_directory}"),
