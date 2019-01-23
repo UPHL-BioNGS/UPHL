@@ -11,6 +11,17 @@ custom_content:
     - abricate_plasmidfinder
     - abricate_vfdb
     - abricate_ecoli_vf
+    - abricate_cpd
+    - abricate_serotypefinder_plasmid
+    - abricate_ecoh_plasmid
+    - abricate_resfinder_plasmid
+    - abricate_ncbi_plasmid
+    - abricate_argannot_plasmid
+    - abricate_card_plasmid
+    - abricate_plasmidfinder_plasmid
+    - abricate_vfdb_plasmid
+    - abricate_ecoli_vf_plasmid
+    - abricate_cpd_plasmid
     - seqyclean_results
     - CG-Pipeline
     - raw_clean_scatter
@@ -58,7 +69,7 @@ custom_data:
     sortRows: True
   abricate_plasmidfinder:
     id: 'abricate_plasmidfinder'
-    section_name: 'Abricate Results: PlasmidFinder 2.0'
+    section_name: 'abricate_plasmidfinder'
     plot_type: 'heatmap'
     format: 'csv'
     pconfig:
@@ -94,19 +105,19 @@ custom_data:
     sortRows: True
   abricate_ncbi:
     id: 'abricate_ncbi'
-    section_name: 'Abricate Results: NCBI Bacterial Antimicrobial Resistance Reference Gene Database'
+    section_name: 'abricate_ncbi'
     plot_type: 'heatmap'
     format: 'csv'
     pconfig:
       id: 'abricate_ncbi'
-      title: 'Abricate Results: NCBI'
+      title: 'Abricate Results: NCBI Bacterial Antimicrobial Resistance Reference Gene Database'
       xTitle: 'Gene'
       square: False
       colstops: [ [0, '#FFFFFF'], [0.6, '#ffffe5'], [0.7, '#d9f0a3'], [0.95, '#004529'], [1, '#000000'], ]
     sortRows: True
   abricate_ecoh:
     id: 'abricate_ecoh'
-    section_name: 'Abricate Results: EcOH'
+    section_name: 'abricate_ecoh'
     plot_type: 'heatmap'
     format: 'csv'
     pconfig:
@@ -128,27 +139,148 @@ custom_data:
       square: False
       colstops: [ [0, '#FFFFFF'], [0.6, '#ffffe5'], [0.7, '#d9f0a3'], [0.95, '#004529'], [1, '#000000'], ]
     sortRows: True
+  abricate_cpd:
+    id: 'abricate_cpd'
+    section_name: 'abricate_cpd'
+    plot_type: 'heatmap'
+    format: 'csv'
+    pconfig:
+      id: 'abricate_cpd'
+      title: 'Abricate Results: cpd'
+      xTitle: 'Plasmid'
+      square: False
+      colstops: [ [0, '#FFFFFF'], [0.6, '#ffffe5'], [0.7, '#d9f0a3'], [0.95, '#004529'], [1, '#000000'], ]
+  abricate_resfinder_plasmid:
+    id: 'abricate_resfinder_plasmid'
+    section_name: 'Abricate Plasmid Results: Resfinder 3.1 Database'
+    plot_type: 'heatmap'
+    format: 'csv'
+    pconfig:
+      id: 'abricate_resfinder_plasmid'
+      title: 'Abricate Plasmid Results: ResFinder'
+      xTitle: 'Gene'
+      square: False
+      colstops: [ [0, '#FFFFFF'], [0.6, '#e0ecf4'], [0.7, '#9ebcda'], [0.95, '#8856a7'], [1, '#000000'], ]
+  abricate_argannot_plasmid:
+    id: 'abricate_argannot_plasmid'
+    section_name: 'Abricate Plasmid Results: Antibiotic Resistance Gene-ANNOTation'
+    plot_type: 'heatmap'
+    format: 'csv'
+    pconfig:
+      id: 'abricate_argannot_plasmid'
+      title: 'Abricate Plasmid Results: ARG-ANNOT'
+      xTitle: 'Gene'
+      square: False
+      colstops: [ [0, '#FFFFFF'], [0.6, '#ffffe5'], [0.7, '#d9f0a3'], [0.95, '#004529'], [1, '#000000'], ]
+  abricate_card_plasmid:
+    id: 'abricate_card_plasmid'
+    section_name: 'Abricate Plasmid Results: The Comprehensive Antibiotic Resistance Database'
+    plot_type: 'heatmap'
+    format: 'csv'
+    pconfig:
+      id: 'abricate_card_plasmid'
+      title: 'Abricate Plasmid Results: CARD'
+      xTitle: 'Gene'
+      square: False
+      colstops: [ [0, '#FFFFFF'], [0.6, '#ffffe5'], [0.7, '#d9f0a3'], [0.95, '#004529'], [1, '#000000'], ]
+  abricate_plasmidfinder_plasmid:
+    id: 'abricate_plasmidfinder_plasmid'
+    section_name: 'abricate_plasmidfinder_plasmid'
+    plot_type: 'heatmap'
+    format: 'csv'
+    pconfig:
+      id: 'abricate_plasmidfinder_plasmid'
+      title: 'Abricate Plasmid Results: Plasmidfinder'
+      xTitle: 'Plasmid'
+      square: False
+      colstops: [ [0, '#FFFFFF'], [0.6, '#ffffe5'], [0.7, '#d9f0a3'], [0.95, '#004529'], [1, '#000000'], ]
+  abricate_vfdb:
+    id: 'abricate_vfdb_plasmid'
+    section_name: 'Abricate Plasmid Results: Virulence Factors of Pathogenic Bacteria'
+    plot_type: 'heatmap'
+    format: 'csv'
+    pconfig:
+      id: 'abricate_vfdb_plasmid'
+      title: 'Abricate Plasmid Results: VFDB'
+      xTitle: 'Gene'
+      square: False
+      colstops: [ [0, '#FFFFFF'], [0.6, '#ffffe5'], [0.7, '#d9f0a3'], [0.95, '#004529'], [1, '#000000'], ]
+  abricate_ecoli_vf_plasmid:
+    id: 'abricate_ecoli_vf_plasmid'
+    section_name: 'Abricate Plasmid Results: Escherichia coli virulence factors'
+    plot_type: 'heatmap'
+    format: 'csv'
+    pconfig:
+      id: 'abricate_ecoli_vf_plasmid'
+      title: 'Abricate Plasmid Results: E. coli virulence factors'
+      xTitle: 'Gene'
+      square: False
+      colstops: [ [0, '#FFFFFF'], [0.6, '#ffffe5'], [0.7, '#d9f0a3'], [0.95, '#004529'], [1, '#000000'], ]
+  abricate_ncbi_plasmid:
+    id: 'abricate_ncbi_plasmid'
+    section_name: 'abricate_ncbi_plasmid'
+    plot_type: 'heatmap'
+    format: 'csv'
+    pconfig:
+      id: 'abricate_ncbi_plasmid'
+      title: 'Abricate Plasmid Results: NCBI Bacterial Antimicrobial Resistance Reference Gene Database'
+      xTitle: 'Gene'
+      square: False
+      colstops: [ [0, '#FFFFFF'], [0.6, '#ffffe5'], [0.7, '#d9f0a3'], [0.95, '#004529'], [1, '#000000'], ]
+  abricate_ecoh_plasmid:
+    id: 'abricate_ecoh_plasmid'
+    section_name: 'abricate_ecoh_plasmid'
+    plot_type: 'heatmap'
+    format: 'csv'
+    pconfig:
+      id: 'abricate_ecoh_plasmid'
+      title: 'Abricate Plasmid Results: EcOH'
+      xTitle: 'O or H group'
+      square: False
+      colstops: [ [0, '#FFFFFF'], [0.6, '#ffffe5'], [0.7, '#d9f0a3'], [0.95, '#004529'], [1, '#000000'], ]
+  abricate_serotypefinder_plasmid:
+    id: 'abricate_serotypefinder_plasmid'
+    section_name: 'Abricate Plasmid Results: serotypefinder'
+    plot_type: 'heatmap'
+    format: 'csv'
+    pconfig:
+      id: 'abricate_serotypefinder_plasmid'
+      title: 'Abricate Plasmid Results: SerotypeFinder'
+      xTitle: 'O or H group'
+      square: False
+      colstops: [ [0, '#FFFFFF'], [0.6, '#ffffe5'], [0.7, '#d9f0a3'], [0.95, '#004529'], [1, '#000000'], ]
+  abricate_cpd_plasmid:
+    id: 'abricate_cpd_plasmid'
+    section_name: 'abricate_cpd_plasmid'
+    plot_type: 'heatmap'
+    format: 'csv'
+    pconfig:
+      id: 'abricate_cpd_plasmid'
+      title: 'Abricate Plasmid Results: cpd'
+      xTitle: 'Plasmid'
+      square: False
+      colstops: [ [0, '#FFFFFF'], [0.6, '#ffffe5'], [0.7, '#d9f0a3'], [0.95, '#004529'], [1, '#000000'], ]
   seqsero_results:
+    id: 'seqsero_results'
+    section_name: 'SeqSero serotyping results'
+    format: 'tsv'
+    plot_type: 'table'
+    pconfig:
       id: 'seqsero_results'
-      section_name: 'SeqSero serotyping results'
-      format: 'tsv'
-      plot_type: 'table'
-      pconfig:
-        id: 'seqsero_results'
-        namespace: 'SeqSero results'
-      headers:
-        Input_files:
-          hidden: True
-        O_antigen_prediction:
-          hidden: False
-        H1_antigen_prediction(fliC):
-          hidden: False
-        H2_antigen_prediction(fljB):
-          hidden: False
-        Predicted_antigenic_profile:
-          hidden: False
-        Predicted_serotype(s):
-          hidden: False
+      namespace: 'SeqSero results'
+    headers:
+      Input_files:
+        hidden: True
+      O_antigen_prediction:
+        hidden: False
+      H1_antigen_prediction(fliC):
+        hidden: False
+      H2_antigen_prediction(fljB):
+        hidden: False
+      Predicted_antigenic_profile:
+        hidden: False
+      Predicted_serotype(s):
+        hidden: False
   mash_results:
     id: 'mash_results'
     section_name: 'MASH Results'
@@ -473,10 +605,14 @@ sp:
     fn: 'vfdb.summary.csv'
   abricate_ecoli_vf:
     fn: 'ecoli_vf.summary.csv'
+  abricate_ecoli_vf:
+    fn: 'cpd.summary.csv'
   abricate_ncbi:
     fn: 'ncbi.summary.csv'
   abricate_ecoh:
     fn: 'ecoh.summary.csv'
+  abricate_cpd:
+    fn: 'cpd.summary.csv'
   abricate_serotypefinder:
     fn: 'serotypefinder.summary.csv'
   seqsero_results:
@@ -499,3 +635,25 @@ sp:
     fn: 'cg-pipeline-summary.txt'
   snakemake_benchmarks:
     fn: 'benchmark_summary.csv'
+  abricate_resfinder_plasmid:
+    fn: 'resfinder.plasmids.summary.csv'
+  abricate_argannot_plasmid:
+    fn: 'argannot.plasmids.summary.csv'
+  abricate_card_plasmid:
+    fn: 'card.plasmids.summary.csv'
+  abricate_plasmidfinder_plasmid:
+    fn: 'plasmidfinder.plasmids.summary.csv'
+  abricate_vfdb_plasmid:
+    fn: 'vfdb.plasmids.summary.csv'
+  abricate_ecoli_vf_plasmid:
+    fn: 'ecoli_vf.plasmids.summary.csv'
+  abricate_ecoli_vf_plasmid:
+    fn: 'cpd.plasmids.summary.csv'
+  abricate_ncbi_plasmid:
+    fn: 'ncbi.plasmids.summary.csv'
+  abricate_ecoh_plasmid:
+    fn: 'ecoh.plasmids.summary.csv'
+  abricate_cpd_plasmid:
+    fn: 'cpd.plasmids.summary.csv'
+  abricate_serotypefinder_plasmid:
+    fn: 'serotypefinder.plasmids.summary.csv'

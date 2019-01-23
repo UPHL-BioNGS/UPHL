@@ -42,7 +42,7 @@ rule all:
         48
     run:
         # creating a table from the benchmarks
-        shell("{params.base_directory}/benchmark_multiqc.sh {params.working_directory}"),
+        shell("{params.base_directory}/benchmark120_multiqc.sh {params.working_directory}"),
         # roary results
         shell("{params.base_directory}/roary_multiqc.sh {params.working_directory}"),
         shell("{params.base_directory}/organism_multiqc.sh {params.working_directory}"),

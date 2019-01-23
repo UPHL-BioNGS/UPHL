@@ -86,6 +86,19 @@ run_clean.files ()
       fi
     fi
   done
+  salmo_directories=($(ls -d $out/$d/salmonella/*/ ))
+  ecoli_directories=($(ls -d $out/$d/ecoli/*/ ))
+  other_directories=($(ls -d $out/$d/other/*/ ))
+  echo "These are the directories:"
+  echo ${salmo_directories[@]} ${ecoli_directories[@]} ${other_directories[@]}
+  for directory in ${salmo_directories[@]} ${ecoli_directories[@]} ${other_directories[@]} other salmonella ecoli
+  do
+    echo $directory
+    if [ -z "$(find $directory -iname '*gff' | head -n 1 )" ]
+    then
+      rm -R $directory
+    fi
+  done
 }
 run_clean.prune ()
 {
@@ -128,16 +141,20 @@ run_clean.recent ()
 {
   out=$1
   d=$2
+  recent_flag=$3
 
   directories=($(ls -d $out/$d/*/*/*/ ))
   for directory in ${directories[@]}
   do
     ls $directory/*gff > $directory/list_of_samples.txt
-    recent_check=$(grep -f $out/$d/files/recent_files.txt $directory/list_of_samples.txt | head -n 1 )
-    if [ -z "$recent_check" ]
+    if [ -z "$recent_flag" ]
     then
-      ls $directory/*gff | sed 's!.*/!!' | cut -d "." -f 1 | awk '{ print $0 "\tno_recent" }' >> $out/$d/logs/samples.rm
-      rm -R $directory
+      recent_check=$(grep -f $out/$d/files/recent_files.txt $directory/list_of_samples.txt | head -n 1 )
+      if [ -z "$recent_check" ]
+      then
+        ls $directory/*gff | sed 's!.*/!!' | cut -d "." -f 1 | awk '{ print $0 "\tno_recent" }' >> $out/$d/logs/samples.rm
+        rm -R $directory
+      fi
     fi
   done
 }
@@ -580,9 +597,9 @@ then
   cut $list_of_recnt -f 7 -d "/" > $out/$d/files/recent_files.txt
 
   date
-  echo "Gathering abricate results"
-  for database in argannot card ecoh ecoli ecoli_vf ncbi plasmidfinder resfinder serotypefinder vfdb
+  for database in argannot card ecoh ecoli ecoli_vf ncbi plasmidfinder resfinder serotypefinder vfdb cpd
   do
+    echo "Gathering abricate results for $database"
     ln -s $search_path/*/abricate_results/$database/*.out.tab $out/$d/serotyping_results/abricate/.
   done
   date
@@ -608,12 +625,10 @@ date
 echo "Removing samples with files that are too small"
 run_clean.size $out $d
 
-if [ -z "$recent_flag" ]
-then
-  date
-  echo "Removing directories without recent samples"
-  run_clean.recent $out $d
-fi
+echo "recent flag is $recent_flag"
+date
+echo "Listing samples in directory"
+run_clean.recent $out $d $recent_flag
 
 date
 echo "Removing samples with abnormal serotypes"

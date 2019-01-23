@@ -10,7 +10,9 @@ FILE_TEMPLATE=(
 "fastqc_files:fastqc"
 "mash_file:mash"
 "shovill_file:ALL_assembled"
+"plasmidspades:assembled_plasmids"
 "prokka_file:ALL_gff"
+"prokka_for_plasmids:plasmid_gff"
 "seqsero_file:SeqSero"
 "cg-pipeline_files:cg-pipeline"
 "quast_file:quast"
@@ -48,7 +50,6 @@ do
   RESULTS=($(echo -e "${RESULTS[@]}\t$database" ))
 done
 echo ${RESULTS[@]} | tr ' ' '\t' | parallel " echo -e {} > $out/run_results_summary.txt "
-
 SAMPLES=($(ls $out/Sequencing_reads/Raw/*fastq* | sed 's!.*/!!' | cut -d "_" -f 1 | sort | uniq ))
 for sample in ${SAMPLES[@]}
 do
@@ -58,9 +59,9 @@ do
   do
     analysis_directory="$(echo $template | cut -f 2 -d ':' )"
     analysis="$(echo $template | cut -f 1 -d ':' )"
-    if [ -n "$(find $out/$analysis_directory -iname *$pnusa* )" ]
+    if [ -n "$(find $out/$analysis_directory -iname *$pnusa* -size +0 -type f )" ]
     then
-      files=($(find $out/$analysis_directory -iname *$pnusa* ))
+      files=($(find $out/$analysis_directory -iname *$pnusa* -size +0 -type f ))
       if [ ! -s "${files[0]}" ]
       then
         file="not_found"
@@ -76,7 +77,6 @@ do
       FILES=("$(echo -e "${FILES[@]}\t$analysis:not_found" )")
     fi
   done
-
   #########################################heatmap_of_files and summary_of_files
 
 #  echo "the history of files"
@@ -103,13 +103,13 @@ do
       elif [ "$file" == "not_ecoli" ]
       then
         file_heatmap="$file_heatmap,0.5"
-      elif [ "$variable" == "not_salmonella" ]
+      elif [ "$file" == "not_salmonella" ]
       then
         file_heatmap="$file_heatmap,0.5"
-      elif [ "$variable" == "not_found" ]
+      elif [ "$file" == "not_found" ]
       then
         file_heatmap="$file_heatmap,0"
-      elif [ "$variable" == "no_result" ]
+      elif [ "$file" == "no_result" ]
       then
         file_heatmap="$file_heatmap,0.5"
       else
@@ -124,7 +124,7 @@ do
   #########################################results_from_files
 
   # mash_results
-  if [ -n "$(find $out/mash -iname $pnusa*sorted.txt )" ]
+  if [ -n "$(find $out/mash -iname $sample*sorted.txt )" ]
   then
     mash_results=($(cat $out/mash/$sample*sorted.txt | head -n 1 | cut -f 1 | awk -F "-.-" '{ print $NF }' | sed 's/.fna//g' | awk -F "_" '{ print $1 "\t" $2 "\t" $3 "\t" $4 }' ))
     mash_result=$(echo "${mash_results[0]}""_""${mash_results[1]}""_""${mash_results[2]}""_""${mash_results[3]}")
@@ -139,7 +139,7 @@ do
   # seqsero_results
   if [ -n "$(echo $mash_result | grep "Salmonella_enterica" )" ]
   then
-    if [ -n "$(find $out/SeqSero -iname $pnusa*Seqsero_result.txt )" ]
+    if [ -n "$(find $out/SeqSero -iname $sample*Seqsero_result.txt )" ]
     then
       seqsero_serotype=$(grep "Predicted serotype" $out/SeqSero/$sample.Seqsero_result.txt | cut -f 2 | tr ' ' '_' )
       if [ -z "$seqsero_serotype" ]; then seqsero_serotype="no_result"; fi
@@ -232,13 +232,12 @@ do
   fi
 
   results="$pnusa\t$sample\t$mash_result\t$simple_mash_result\t$seqsero_serotype\t$seqsero_profile\t$simple_seqsero_result\t$cg_cln_coverage\t$cg_raw_coverage\t$fastqc_raw_reads_1\t$fastqc_raw_reads_2\t$fastqc_clean_reads_PE1\t$fastqc_clean_reads_PE2\t$abricate_ecoh_O\t$abricate_ecoh_H\t$abricate_serotype_O\t$abricate_serotype_H\t$stxeae_result"
-
   # abricate_results
   for database in argannot resfinder card plasmidfinder vfdb ecoli_vf ncbi
   do
     if [ -f "$out/abricate_results/$database/$database.$sample.out.tab" ]
     then
-      abricate_results=($(grep $pnusa $out/abricate_results/$database/$database.$sample.out.tab | awk '{ if ($10 > 80) print $0 }' | awk '{ if ($9 > 80) print $0 }' | cut -f 5 | sort | uniq | sed 's/[0]//g' ))
+      abricate_results=($(grep $sample $out/abricate_results/$database/$database.$sample.out.tab | awk '{ if ($10 > 80) print $0 }' | awk '{ if ($9 > 80) print $0 }' | cut -f 5 | sort | uniq | sed 's/[0]//g' ))
       abricate_result=$(echo ${abricate_results[@]} | tr ' ' '_' )
       if [ -z "$abricate_result" ]; then abricate_result="not_found"; fi
       results="$results\t$abricate_result"
@@ -246,11 +245,11 @@ do
       results="$results\tno_result"
     fi
   done
-
-  echo -e "$results" >> $out/run_results_summary.txt
+  echo -e $results >> $out/run_results_summary.txt
   echo "$sample $fastqc_raw_reads_2 $fastqc_clean_reads_PE2" >> $out/logs/raw_clean_scatter.txt
   echo "$sample $cg_raw_coverage $cg_cln_coverage" >> $out/logs/raw_clean_coverage.txt
 done
+echo "Results for $out"
 
 echo "Mash results count"
 mash_column=$(head -n 1 $out/run_results_summary.txt | tr "\t" "\n" | grep -n ^"simple_mash_result" | cut -f 1 -d ":" )

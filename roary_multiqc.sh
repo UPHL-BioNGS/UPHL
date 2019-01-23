@@ -1,10 +1,8 @@
 #!/bin/bash
 output_directory=$1
 roary_summaries=($(ls $output_directory/*/*/*/Roary_out/summary_statistics.txt ))
-if [ ! -f "$output_directory/logs/Roary_summary_statistics.txt" ]
-then
-  echo -e "tree\tcore_genes\tsoft_core_genes\tshell_genes\tcloud_genes" > $output_directory/logs/Roary_summary_statistics.txt
-fi
+
+echo -e "tree\tcore_genes\tsoft_core_genes\tshell_genes\tcloud_genes" > $output_directory/logs/Roary_summary_statistics.txt
 
 for summary in ${roary_summaries[@]}
 do

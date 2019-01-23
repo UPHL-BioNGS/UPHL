@@ -11,7 +11,7 @@ seqyclean_adaptors="/home/Bioinformatics/Data/SeqyClean_data/PhiX_174_plus_Adapt
 mash_sketches="/home/Bioinformatics/Data/RefSeqSketchesDefaults.msh"
 
 SAMPLE, MIDDLE, EXTENSION = glob_wildcards('Sequencing_reads/Raw/{sample, [^_]+}_{middle}.f{extension}')
-DATABASE = ['argannot', 'resfinder', 'card', 'plasmidfinder', 'vfdb', 'ecoli_vf', 'ncbi', 'ecoh', 'serotypefinder']
+DATABASE = ['argannot', 'resfinder', 'card', 'plasmidfinder', 'vfdb', 'ecoli_vf', 'ncbi', 'ecoh', 'serotypefinder', 'cpd']
 
 rule all:
     input:
@@ -23,6 +23,7 @@ rule all:
         "Sequencing_reads/Logs/seqyclean_summary.txt",
         # running FastQC
         expand("fastqc/{sample}_clean_{end}_fastqc.zip", sample=SAMPLE, end=['PE1', 'PE2', 'SE']),
+        "fastqc/raw.complete",
         # running shovill
         expand("ALL_assembled/{sample}_contigs.fa",sample=SAMPLE),
         # mash results
@@ -40,18 +41,22 @@ rule all:
         "cg-pipeline/cg-pipeline-summary.txt",
         # abricate results
         expand("abricate_results/{database}/{database}.{sample}.out.tab", sample=SAMPLE, database=DATABASE),
-        expand("abricate_results/{database}/{database}.summary.csv", database=DATABASE)
+        expand("abricate_results/{database}/{database}.summary.csv", database=DATABASE),
+        # plasmidspades
+        expand("assembled_plasmids/{sample}_contigs.fa",sample=SAMPLE),
+        # quast for plasmids
+        expand("quast/{sample}.plasmids.report.txt", sample=SAMPLE),
+        # abricate for plasmids
+        expand("abricate_results/plasmids/{database}/{database}.{sample}.out.tab", sample=SAMPLE, database=DATABASE),
+        expand("abricate_results/plasmids/{database}/{database}.plasmids.summary.csv", database=DATABASE),
+        # prokka for plasmids
+        expand("plasmid_gff/{sample}.gff", sample=SAMPLE),
     params:
         output_directory=output_directory,
         base_directory=workflow.basedir
     threads:
         48
     run:
-        # running fastqc
-        shell("which fastqc")
-        shell("fastqc --version")
-        shell("mkdir -p fastqc")
-        shell("fastqc --outdir fastqc --threads {threads} Sequencing_reads/Raw/*.f*"),
         # creating a table from the benchmarks
         shell("{params.base_directory}/benchmark_multiqc.sh {params.output_directory}"),
         # getting the Summary
@@ -69,6 +74,10 @@ def get_read1(wildcards):
 def get_read2(wildcards):
     read2=glob.glob("Sequencing_reads/Raw/" + wildcards.sample + "*_R2_001.fastq.gz") + glob.glob("Sequencing_reads/Raw/" + wildcards.sample + "_2.fastq")
     return(''.join(read2))
+
+def get_reads(wildcards):
+    reads=glob.glob("Sequencing_reads/Raw/*fastq*")
+    return(reads)
 
 rule seqyclean:
     input:
@@ -116,6 +125,10 @@ rule fastqc:
         "Sequencing_reads/QCed/{sample}_clean_{end}.fastq"
     output:
         "fastqc/{sample}_clean_{end}_fastqc.zip"
+    log:
+        "logs/fastqc/{sample}_clean_{end}.log"
+    benchmark:
+        "logs/benchmark/fastqc/{sample}_clean_{end}.log"
     threads:
         1
     run:
@@ -123,6 +136,23 @@ rule fastqc:
         shell("fastqc --version")
         shell("fastqc --outdir fastqc --threads {threads} {input} || true ")
         shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
+
+rule fastqc_raw:
+    input:
+        get_reads
+    output:
+        "fastqc/raw.complete"
+    log:
+        "logs/fastqc/raw.log"
+    benchmark:
+        "logs/benchmark/fastqc/raw.log"
+    threads:
+        1
+    run:
+        shell("which fastqc")
+        shell("fastqc --version")
+        shell("fastqc --outdir fastqc --threads {threads} Sequencing_reads/Raw/*fastq* || true")
+        shell("touch {output}")
 
 rule shovill:
     input:
@@ -186,7 +216,7 @@ rule mash_sketch:
     run:
         shell("which mash")
         shell("mash --version")
-        shell("mash sketch -m 2 -p {threads} {input} || true ")
+        shell("mash sketch -m 2 {input} || true ")
         shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
 
 rule mash_dist:
@@ -241,8 +271,8 @@ rule mash_multiqc:
 
 rule prokka:
     input:
-        contig_file="ALL_assembled/{sample}_contigs.fa",
-        mash_file="mash/{sample}.clean_all.fastq.msh.distance.sorted.txt"
+        contig_file=rules.shovill_move.output,
+        mash_file=rules.mash_sort.output
     threads:
         48
     output:
@@ -251,8 +281,6 @@ rule prokka:
         "logs/prokka/{sample}.log"
     benchmark:
         "logs/benchmark/prokka/{sample}.log"
-    threads:
-        1
     shell:
         """
         which prokka
@@ -267,7 +295,7 @@ rule prokka:
 
 rule prokka_move:
     input:
-        "Prokka/{sample}/{sample}.gff"
+        rules.prokka.output
     output:
         "ALL_gff/{sample}.gff"
     log:
@@ -281,7 +309,7 @@ rule prokka_move:
 
 rule quast:
     input:
-        "ALL_assembled/{sample}_contigs.fa"
+        rules.shovill_move.output
     output:
         "quast/{sample}/report.txt",
     log:
@@ -293,12 +321,12 @@ rule quast:
     run:
         shell("which quast")
         shell("quast --version")
-        shell("quast {input} --output-dir quast/{wildcards.sample} || true ")
+        shell("quast {input} --output-dir quast/{wildcards.sample} --threads {threads} || true ")
         shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
 
 rule quast_move:
     input:
-        "quast/{sample}/report.txt"
+        rules.quast.output
     output:
         "quast/{sample}.report.txt"
     log:
@@ -437,7 +465,7 @@ rule seqsero_multiqc:
 
 rule abricate:
     input:
-        "ALL_assembled/{sample}_contigs.fa"
+        rules.shovill_move.output
     output:
         "abricate_results/{database}/{database}.{sample}.out.tab"
     log:
@@ -445,12 +473,12 @@ rule abricate:
     benchmark:
         "logs/benchmark/abricate_{database}/{sample}.log"
     threads:
-        1
+        48
     run:
         shell("which abricate")
         shell("abricate --version")
         shell("abricate --list")
-        shell("abricate -db {wildcards.database} {input} > {output} || true ")
+        shell("abricate --db {wildcards.database} --threads {threads} {input} > {output} || true ")
         shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
 
 rule abricate_combine:
@@ -471,13 +499,168 @@ rule abricate_combine:
 
 rule abricate_multiqc:
     input:
-        "abricate_results/{database}/{database}.summary.txt"
+        rules.abricate_combine.output
     output:
         "abricate_results/{database}/{database}.summary.csv"
     log:
         "logs/abricate_multiqc/{database}.log"
     benchmark:
         "logs/benchmark/abricate_multiqc/{database}.log"
+    threads:
+        1
+    shell:
+        "cat {input} | "
+        "sed 's/#//g' | sed 's/.tab//g' | sed \"s/{wildcards.database}.//g\" | "
+        "awk '{{ sub(\"^.*/\", \"\", $1); print}}' | "
+        "awk '{{ for (i=1;i<=NF;i++) if ($i ~ \";\" )gsub(\";.*$\",\"\",$i)g ; else continue}}{{print $0}}' | "
+        "awk '{{ $2=\"\" ; print $0 }}' | sed 's/\t/,/g' | sed 's/ /,/g' | "
+        "sed 's/[.],/0,/g' | sed 's/,[.]/,0/g' | sed 's/,,/,/g' "
+        "> {output}"
+
+rule plasmidspades:
+    input:
+        read1="Sequencing_reads/QCed/{sample}_clean_PE1.fastq",
+        read2="Sequencing_reads/QCed/{sample}_clean_PE2.fastq"
+    threads:
+        48
+    log:
+        "logs/plasmidspades/{sample}.log"
+    benchmark:
+        "logs/benchmark/plasmidspades/{sample}.log"
+    output:
+        "plasmidspades/{sample}/contigs.fa",
+    run:
+        shell("which plasmidspades.py")
+        shell("plasmidspades.py --version")
+        shell("plasmidspades.py -t {threads} -m 200 -o plasmidspades/{wildcards.sample} -1 {input.read1} -2 {input.read2} || true ")
+        shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
+
+rule plasmidspades_move:
+    input:
+        rules.plasmidspades.output
+    log:
+        "logs/plasmidspades_move/{sample}.log"
+    benchmark:
+        "logs/benchmark/plasmidspades_move/{sample}.log"
+    threads:
+        1
+    output:
+        "assembled_plasmids/{sample}_contigs.fa"
+    shell:
+        "cp {input} {output}"
+
+rule plasmidprokka:
+    input:
+        contig_file=rules.plasmidspades_move.output,
+        mash_file=rules.mash_sort.output
+    threads:
+        48
+    output:
+        "Prokka/plasmids/{sample}/{sample}.gff",
+    log:
+        "logs/plasmidprokka/{sample}.log"
+    benchmark:
+        "logs/benchmark/plasmidprokka/{sample}.log"
+    shell:
+        """
+        which prokka
+        prokka --version
+        if [ -s \"{input.mash_file}\" ]
+        then
+            mash_result=($(head -n 1 {input.mash_file} | cut -f 1 | awk -F \"-.-\" '{{ print $NF }}' | sed 's/.fna//g' | awk -F \"_\" '{{ print $1 \" \" $2 }}' ))
+            prokka --cpu {threads} --compliant --centre --UPHL --mincontiglen 500 --outdir Prokka/plasmids/{wildcards.sample} --locustag locus_tag --prefix {wildcards.sample} --genus ${{mash_result[0]}} --species ${{mash_result[1]}} --force {input.contig_file} || true
+        fi
+        if [ ! -f {output} ] ; then touch {output} ; fi
+        """
+
+rule plasmidprokka_move:
+    input:
+        rules.plasmidprokka.output
+    output:
+        "plasmid_gff/{sample}.gff"
+    log:
+        "logs/plasmidprokka_move/{sample}.log"
+    benchmark:
+        "logs/benchmark/plasmidprokka_move/{sample}.log"
+    threads:
+        1
+    shell:
+        "cp {input} {output}"
+
+rule plasmidquast:
+    input:
+        rules.plasmidspades_move.output
+    output:
+        "quast/plasmids/{sample}/report.txt",
+    log:
+        "logs/plasmidquast/{sample}.log"
+    benchmark:
+        "logs/benchmark/plasmidquast/{sample}.log"
+    threads:
+        1
+    run:
+        shell("which quast")
+        shell("quast --version")
+        shell("quast {input} --output-dir quast/plasmids/{wildcards.sample} --threads {threads} || true ")
+        shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
+
+rule plasmidquast_move:
+    input:
+        rules.plasmidquast.output
+    output:
+        "quast/{sample}.plasmids.report.txt"
+    log:
+        "logs/plasmidquast_move/{sample}.log"
+    benchmark:
+        "logs/benchmark/plasmidquast_move/{sample}.log"
+    threads:
+        1
+    shell:
+        "cp {input} {output}"
+
+rule plasmidabricate:
+    input:
+        rules.plasmidspades_move.output
+    output:
+        "abricate_results/plasmids/{database}/{database}.{sample}.out.tab"
+    log:
+        "logs/plasmidabricate/{sample}.{database}.log"
+    benchmark:
+        "logs/benchmark/plasmidabricate_{database}/{sample}.log"
+    threads:
+        48
+    run:
+        shell("which abricate")
+        shell("abricate --version")
+        shell("abricate --list")
+        shell("abricate --db {wildcards.database} --threads {threads} {input} > {output} || true ")
+        shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
+
+rule plasmidabricate_combine:
+    input:
+        expand("abricate_results/plasmids/{database}/{database}.{sample}.out.tab", sample=SAMPLE, database=DATABASE)
+    output:
+        "abricate_results/plasmids/{database}/{database}.summary.txt"
+    log:
+        "logs/plasmidabricate_combine_{database}/{database}.log"
+    benchmark:
+        "logs/benchmark/plasmidabricate_combine/{database}.log"
+    threads:
+        1
+    run:
+        shell("which abricate")
+        shell("abricate --version")
+        shell("abricate --summary abricate_results/plasmids/{wildcards.database}/{wildcards.database}*tab > {output}")
+
+rule plasmidabricate_multiqc:
+    input:
+        rules.plasmidabricate_combine.output
+    output:
+        "abricate_results/plasmids/{database}/{database}.plasmids.summary.csv"
+    log:
+        "logs/plasmidabricate_multiqc/{database}.log"
+    benchmark:
+        "logs/benchmark/plasmidabricate_multiqc/{database}.log"
     threads:
         1
     shell:
