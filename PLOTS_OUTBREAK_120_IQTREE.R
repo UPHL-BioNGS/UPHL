@@ -28,7 +28,8 @@ bootstrap_values <- thetree$data$label
 bootstrap_values[is.na(bootstrap_values)] <- 0
 bootstrap_values[bootstrap_values == ""] <- 0
 bootstrap_values[which(thetree$data$isTip==TRUE)] <- 0
-bootstrap_and_nodes <- data.frame(thetree$data$node, sub("_.*", "", bootstrap_values), sub(".*_", "", bootstrap_values), stringsAsFactors = FALSE)
+bootstrap_and_nodes <- data.frame(thetree$data$node, sub("/.*", "", bootstrap_values), sub(".*/", "", bootstrap_values), stringsAsFactors = FALSE)
+#bootstrap_and_nodes <- data.frame(thetree$data$node, sub("_.*", "", bootstrap_values), sub(".*_", "", bootstrap_values), stringsAsFactors = FALSE)
 colnames(bootstrap_and_nodes) <- c("node", "bootstrap","UFboot" )
 bootstrap_and_nodes$bootstrap <- as.numeric(bootstrap_and_nodes$bootstrap)
 bootstrap_and_nodes$UFboot    <- as.numeric(bootstrap_and_nodes$UFboot)
