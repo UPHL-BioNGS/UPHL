@@ -16,10 +16,11 @@ def find_gff_files(wildcards):
     gff_files=glob.glob(wildcards.analysis_type + "/" + wildcards.genus + "/" + wildcards.species + "/*gff" )
     return(gff_files)
 
-def control_files(directory):
-    control_file=glob.glob(directory + "/*control.gff")
+def find_control(wildcards):
+    control_gff=glob.glob(wildcards.analysis_type + "/" + wildcards.genus + "/" + wildcards.species + "/*control.gff")
+    control_file=os.path.splitext(os.path.basename(str(control_gff[0])))[0]
     if len(control_file) > 0 :
-        return(str("-o " + control_file[0]))
+        return(str("-o " + control_file))
     else:
         return("")
 
@@ -93,7 +94,7 @@ rule roary:
 
 rule iqtree:
     input:
-        touch_roary= rules.roary.output,
+        touch_roary=rules.roary.output,
     output:
         "{analysis_type}/{genus}/{species}/IQTREE/{genus}.{species}.iqtree.ckp.gz",
         "{analysis_type}/{genus}/{species}/IQTREE/{genus}.{species}.iqtree.contree",
@@ -102,7 +103,8 @@ rule iqtree:
         "{analysis_type}/{genus}/{species}/IQTREE/{genus}.{species}.iqtree.splits.nex",
         treefile="{analysis_type}/{genus}/{species}/IQTREE/{genus}.{species}.iqtree.treefile",
     params:
-        core_genome="{analysis_type}/{genus}/{species}/Roary_out/core_gene_alignment.aln"
+        core_genome="{analysis_type}/{genus}/{species}/Roary_out/core_gene_alignment.aln",
+        control_file=find_control
     log:
         "logs/iqtree/{analysis_type}.{genus}.{species}.log"
     benchmark:
@@ -112,8 +114,7 @@ rule iqtree:
     run:
         shell("which iqtree")
         shell("iqtree --version")
-        control_file= control_files("{wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}")
-        shell("iqtree -s {params.core_genome} -t RANDOM -m GTR+F+I -bb 1000 -alrt 1000 -pre {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/IQTREE/{wildcards.genus}.{wildcards.species}.iqtree -nt AUTO " + control_file)
+        shell("iqtree -s {params.core_genome} -t RANDOM -m GTR+F+I -bb 1000 -alrt 1000 -pre {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/IQTREE/{wildcards.genus}.{wildcards.species}.iqtree -nt {threads} {params.control_file} ")
 
 rule ggtree_create:
     input:
