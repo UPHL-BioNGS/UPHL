@@ -537,6 +537,7 @@ custom_data:
     id: 'raw_clean_scatter'
     section_name: 'Reads Comparison'
     plot_type: 'scatter'
+    format: 'csv'
     pconfig:
       id: 'raw_clean_scatter'
       title: 'Comparison of the number of reads from raw and clean fastq files'
@@ -626,7 +627,7 @@ sp:
   summary_of_results:
     fn: 'run_results_summary.txt'
   raw_clean_scatter:
-    fn: 'raw_clean_scatter.txt'
+    fn: 'raw_clean_scatter.csv'
   raw_clean_coverage:
     fn: 'raw_clean_coverage.txt'
   file_heatmap:

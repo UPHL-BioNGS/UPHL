@@ -1,7 +1,7 @@
 #!/bin/bash
 out=$1
 
-echo "sample x y" > $out/logs/raw_clean_scatter.txt
+echo "sample,x,y" > $out/logs/raw_clean_scatter.csv
 echo "sample x y" > $out/logs/raw_clean_coverage.txt
 
 FILE_TEMPLATE=(
@@ -246,8 +246,8 @@ do
     fi
   done
   echo -e $results >> $out/run_results_summary.txt
-  echo "$sample $fastqc_raw_reads_2 $fastqc_clean_reads_PE2" >> $out/logs/raw_clean_scatter.txt
-  echo "$sample $cg_raw_coverage $cg_cln_coverage" >> $out/logs/raw_clean_coverage.txt
+  echo "$sample,$fastqc_raw_reads_2,$fastqc_clean_reads_PE2" | sed 's/no_result/0/g' >> $out/logs/raw_clean_scatter.csv
+  echo "$sample $cg_raw_coverage $cg_cln_coverage" | sed 's/no_result/0/g' >> $out/logs/raw_clean_coverage.txt
 done
 echo "Results for $out"
 
