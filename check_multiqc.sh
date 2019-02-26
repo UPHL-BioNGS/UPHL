@@ -10,13 +10,15 @@ FILE_TEMPLATE=(
 "fastqc_files:fastqc"
 "mash_file:mash"
 "shovill_file:ALL_assembled"
-"plasmidspades:assembled_plasmids"
+"plasmid_shovill_file:ALL_assembled_plasmids"
 "prokka_file:ALL_gff"
-"prokka_for_plasmids:plasmid_gff"
+"plasmid_prokka_file:ALL_gff_plasmids"
 "seqsero_file:SeqSero"
 "cg-pipeline_files:cg-pipeline"
 "quast_file:quast"
+"plasmid_quast:quast_plasmids"
 "abricate:abricate_results/*"
+"plasmid_abricate:abricate_results_plasmids/*"
 )
 
 analysis_types=($(history -p ${FILE_TEMPLATE[@]} | cut -f 1 -d ":" ))

@@ -338,11 +338,11 @@ run_control ()
   for control in ${control_list[@]}
   do
     control_parts=($(echo "$control_path/$control" | awk -F ":" '{ print $1 "\t" $2 "\t" $3 "\t" $4 }' ))
-    echo "Adding ${control_parts[0]}"
     if [ -d "$out/$d/${control_parts[1]}/all/all" ] ; then ln -s ${control_parts[0]} $out/$d/${control_parts[1]}/all/all/. ; fi
 
     if [ -d "$out/$d/${control_parts[1]}/${control_parts[2]}/all" ]
     then
+      echo "Adding ${control_parts[0]}"
       ln -s ${control_parts[0]} $out/$d/${control_parts[1]}/${control_parts[2]}/all/.
 
       if [ -d "$out/$d/other/Salmonella/enterica" ] && [ "${control_parts[2]}" == "salmonella" ]
@@ -602,12 +602,18 @@ then
     echo "Gathering abricate results for $database"
     ln -s $search_path/*/abricate_results/$database/*.out.tab $out/$d/serotyping_results/abricate/.
   done
-  date
-  echo "Gathering seqsero results"
-  ln -s $search_path/*/SeqSero/*Seqsero_result.txt $out/$d/serotyping_results/seqsero/.
-  date
-  echo "Gathering mash results"
-  ln -s $search_path/*/mash/*sorted.txt $out/$d/serotyping_results/mash/.
+  if [ -n "$(echo ${serotyping[@]} | grep seqsero)" ]
+  then
+    date
+    echo "Gathering seqsero results"
+    ln -s $search_path/*/SeqSero/*Seqsero_result.txt $out/$d/serotyping_results/seqsero/.
+  fi
+  if [ -n "$(echo ${serotyping[@]} | grep mash)" ]
+  then
+    date
+    echo "Gathering mash results"
+    ln -s $search_path/*/mash/*sorted.txt $out/$d/serotyping_results/mash/.
+  fi
 
   while read gff_file
   do
