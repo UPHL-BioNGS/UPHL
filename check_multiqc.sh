@@ -17,10 +17,11 @@ FILE_TEMPLATE=(
 "cg-pipeline_files:cg-pipeline"
 "quast_file:quast"
 "plasmid_quast:quast_plasmids"
-"abricate:abricate_results/*"
-"plasmid_abricate:abricate_results_plasmids/*"
+"abricate_all:abricate_results/*"
+"plasmid_abricate_all:abricate_results_plasmids/*"
 )
 
+wc -l abricate_results*/*/*out.tab | awk '{ if ( $1 == 1 ) print $2 }' | parallel " rm $out/{} ; touch $out/{} "
 analysis_types=($(history -p ${FILE_TEMPLATE[@]} | cut -f 1 -d ":" ))
 echo "sample\t${analysis_types[@]}" | tr ' ' '\t' | parallel "echo -e {} > $out/run_file_summary.txt "
 file_summary_header=($(head -n 1 $out/run_file_summary.txt ))
@@ -61,23 +62,14 @@ do
   do
     analysis_directory="$(echo $template | cut -f 2 -d ':' )"
     analysis="$(echo $template | cut -f 1 -d ':' )"
-    if [ -n "$(find $out/$analysis_directory -iname *$pnusa* -size +0 -type f )" ]
+    files=($(find $out/$analysis_directory -wholename *$pnusa* -size +0 -type f -not -name quast.log ))
+    if [ -z "${files[0]}" ]
     then
-      files=($(find $out/$analysis_directory -iname *$pnusa* -size +0 -type f ))
-      if [ ! -s "${files[0]}" ]
-      then
-        file="not_found"
-      else
-        file=$(echo ${files[@]} | tr ' ' ',' )
-        if [ -z "$file" ]
-        then
-          file="not_found"
-        fi
-      fi
-      FILES=("$(echo -e "${FILES[@]}\t$analysis:$file" )")
+      file="not_found,"
     else
-      FILES=("$(echo -e "${FILES[@]}\t$analysis:not_found" )")
+      file=$(echo ${files[@]} | tr ' ' ',' | tr '\t' ',' | tr '\n' ',' )
     fi
+    FILES=("$(echo -e "${FILES[@]}\t$analysis:$file" )")
   done
   #########################################heatmap_of_files and summary_of_files
 
@@ -87,7 +79,7 @@ do
   file_heatmap=""
   for column in ${file_summary_header[@]}
   do
-    file=$(history -p ${FILES[@]} | sort | uniq | grep $column | cut -f 2 -d ":" )
+    file=$(history -p ${FILES[@]} | sort | uniq | grep $column | cut -f 2 -d ":" | tr ' ' ',' | tr '\t' ',' | tr '\n' ',' )
     if [ -z "$file_summary" ]
     then
       file_summary="$file"
@@ -102,16 +94,16 @@ do
       if [ -z "$file" ]
       then
         file_heatmap="$file_heatmap,0"
-      elif [ "$file" == "not_ecoli" ]
+      elif [ -n "$(echo $file | grep not_ecoli )" ]
       then
         file_heatmap="$file_heatmap,0.5"
-      elif [ "$file" == "not_salmonella" ]
+      elif [ -n "$(echo $file | grep not_salmonella )" ]
       then
         file_heatmap="$file_heatmap,0.5"
-      elif [ "$file" == "not_found" ]
+      elif [ -n "$(echo $file | grep not_found )" ]
       then
         file_heatmap="$file_heatmap,0"
-      elif [ "$file" == "no_result" ]
+      elif [ -n "$(echo $file | grep no_result )" ]
       then
         file_heatmap="$file_heatmap,0.5"
       else
@@ -120,8 +112,8 @@ do
     fi
   done
 
-  echo "$file_heatmap" >> $out/logs/File_heatmap.csv
-  echo "$file_summary" >> $out/run_file_summary.txt
+  echo "$file_heatmap" | sed 's/,,/,/g' >> $out/logs/File_heatmap.csv
+  echo "$file_summary" | sed 's/,,/,/g' >> $out/run_file_summary.txt
 
   #########################################results_from_files
 
