@@ -84,7 +84,7 @@ rule all:
         shell("which multiqc 2>> {log.err} | tee -a {log.out}")
         shell("multiqc --version 2>> {log.err} | tee -a {log.out}")
         shell("cp {params.base_directory}/multiqc_config_URF_snakemake.yaml multiqc_config.yaml 2>> {log.err} | tee -a {log.out}"),
-        shell("multiqc -f --outdir {params.output_directory}/logs --cl_config \"prokka_fn_snames: True\" {params.output_directory}/results_for_multiqc 2>> {log.err} | tee -a {log.out}"),
+        shell("multiqc -f --outdir {params.output_directory}/logs --cl_config \"prokka_fn_snames: True\" {params.output_directory}/results_for_multiqc 2>> {log.err} | tee -a {log.out} || true"),
 
 def get_read1(wildcards):
     read1=glob.glob("Sequencing_reads/Raw/" + wildcards.sample + "*_R1_001.fastq.gz") + glob.glob("Sequencing_reads/Raw/" + wildcards.sample + "_1.fastq")
