@@ -62,7 +62,7 @@ do
   do
     analysis_directory="$(echo $template | cut -f 2 -d ':' )"
     analysis="$(echo $template | cut -f 1 -d ':' )"
-    files=($(find $out/$analysis_directory -wholename *$pnusa* -size +0 -type f -not -name quast.log ))
+    files=($(find $out/$analysis_directory/ -wholename *$pnusa* -size +0 -type f -not -name quast.log -not -iname *@*))
     if [ -z "${files[0]}" ]
     then
       file="not_found,"
