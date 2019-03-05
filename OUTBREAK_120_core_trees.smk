@@ -101,8 +101,8 @@ rule iqtree:
         core_genome="{analysis_type}/{genus}/{species}/Roary_out/core_gene_alignment.aln",
         control_file=find_control
     log:
-        "log=logs/iqtree/{analysis_type}.{genus}.{species}.log",
-        "err=logs/iqtree/{analysis_type}.{genus}.{species}.err"
+        log="logs/iqtree/{analysis_type}.{genus}.{species}.log",
+        err="logs/iqtree/{analysis_type}.{genus}.{species}.err"
     benchmark:
         "logs/benchmark/iqtree/{analysis_type}.{genus}.{species}.log"
     threads:
