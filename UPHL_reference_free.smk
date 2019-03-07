@@ -159,7 +159,8 @@ rule fastqc:
 
 rule fastqc_raw:
     input:
-        get_reads
+        glob.glob("Sequencing_reads/Raw/*fastq*")
+#        get_reads
     output:
         "fastqc/raw.complete"
     log:
