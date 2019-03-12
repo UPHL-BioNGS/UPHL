@@ -444,41 +444,41 @@ rule plasmidquast:
         shell("quast {input} --output-dir quast_plasmids/{wildcards.sample}_plasmid --threads {threads} 2>> {log.err} | tee -a {log.out} || true ")
         shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
 
-rule GC_pipeline_shuffle_raw:
+rule CG_pipeline_shuffle_raw:
     input:
         read1= get_read1,
         read2= get_read2
     output:
         "Sequencing_reads/shuffled/{sample}_raw_shuffled.fastq.gz"
     log:
-        out="logs/gc_pipeline_shuffle_raw/{sample}.log",
-        err="logs/gc_pipeline_shuffle_raw/{sample}.err"
+        out="logs/cg_pipeline_shuffle_raw/{sample}.log",
+        err="logs/cg_pipeline_shuffle_raw/{sample}.err"
     benchmark:
-        "logs/benchmark/gc_pipeline_shuffle_raw/{sample}.log"
+        "logs/benchmark/cg_pipeline_shuffle_raw/{sample}.log"
     threads:
         1
     run:
         shell("which run_assembly_shuffleReads.pl 2>> {log.err} | tee -a {log.out}")
         shell("run_assembly_shuffleReads.pl -gz {input.read1} {input.read2} > {output} 2>> {log.err}")
 
-rule GC_pipeline_shuffle_clean:
+rule CG_pipeline_shuffle_clean:
     input:
         read1="Sequencing_reads/QCed/{sample}_clean_PE1.fastq",
         read2="Sequencing_reads/QCed/{sample}_clean_PE2.fastq"
     output:
         "Sequencing_reads/shuffled/{sample}_clean_shuffled.fastq.gz"
     log:
-        out="logs/gc_pipeline_shuffle_clean/{sample}.log",
-        err="logs/gc_pipeline_shuffle_clean/{sample}.err"
+        out="logs/cg_pipeline_shuffle_clean/{sample}.log",
+        err="logs/cg_pipeline_shuffle_clean/{sample}.err"
     benchmark:
-        "logs/benchmark/gc_pipeline_shuffle_clean/{sample}.log"
+        "logs/benchmark/cg_pipeline_shuffle_clean/{sample}.log"
     threads:
         1
     run:
         shell("which run_assembly_shuffleReads.pl 2>> {log.err} | tee -a {log.out}")
         shell("run_assembly_shuffleReads.pl -gz {input.read1} {input.read2} > {output} 2>> {log.err}")
 
-rule GC_pipeline:
+rule CG_pipeline:
     input:
         shuffled_fastq="Sequencing_reads/shuffled/{sample}_{raw_or_clean}_shuffled.fastq.gz",
         quast_file="quast/{sample}/report.txt"
@@ -487,10 +487,10 @@ rule GC_pipeline:
     threads:
         48
     log:
-        out="logs/gc_pipeline/{sample}.{raw_or_clean}.log",
-        err="logs/gc_pipeline/{sample}.{raw_or_clean}.err"
+        out="logs/cg_pipeline/{sample}.{raw_or_clean}.log",
+        err="logs/cg_pipeline/{sample}.{raw_or_clean}.err"
     benchmark:
-        "logs/benchmark/gc_pipeline/{sample}.{raw_or_clean}.log"
+        "logs/benchmark/cg_pipeline/{sample}.{raw_or_clean}.log"
     params:
         base_directory=workflow.basedir
     run:
@@ -508,16 +508,16 @@ rule GC_pipeline:
         shell("if [ ! -f {output} ] ; then touch {output} ; fi")
 
 
-rule GC_pipeline_multiqc:
+rule CG_pipeline_multiqc:
     input:
         expand("cg-pipeline/{sample}.{raw_or_clean}.out.txt", sample=SAMPLE, raw_or_clean=['raw', 'clean'])
     output:
         "cg-pipeline/cg-pipeline-summary.txt"
     log:
-        out="logs/gc_pipeline_multiqc/log.log",
-        err="logs/gc_pipeline_multiqc/log.err"
+        out="logs/cg_pipeline_multiqc/log.log",
+        err="logs/cg_pipeline_multiqc/log.err"
     benchmark:
-        "logs/benchmark/gc_pipeline_multiqc/benchmark.log"
+        "logs/benchmark/cg_pipeline_multiqc/benchmark.log"
     threads:
         1
     params:

@@ -433,11 +433,11 @@ custom_data:
       colstops: [ [0, '#000000'], [0.5, '#810f7c'], [1, '#FFFFFF'], ]
   CG-Pipeline:
     id: 'CG-Pipeline'
-    section_name: 'GC-Pipeline Results'
+    section_name: 'CG-Pipeline Results'
     plot_type: 'table'
     pconfig:
       id: 'CG-Pipeline'
-      title: 'GC-Pipeline Results'
+      title: 'CG-Pipeline Results'
     headers:
       File:
         hidden: False
