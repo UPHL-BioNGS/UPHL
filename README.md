@@ -19,21 +19,21 @@
 
 ## A. The SNAKEMAKE files that connects everything at the Utah Public Health Laboratory
 
-### 1. [UPHL_reference_free.smk](UPHL_reference_free_smk): UPHL's reference-free pipeline as a set of snakemake rules 
+### 1. [UPHL_reference_free.smk](UPHL_reference_free.smk): UPHL's reference-free pipeline as a set of snakemake rules 
 - (requires [benchmark_multiqc.sh](URF_scripts/benchmark_multiqc.sh), [cgpipeline_multiqc.sh](URF_scripts/cgpipeline_multiqc.sh), [check_multiqc.sh](URF_scripts/check_multiqc.sh), [genome_length_cg.sh](URF_scripts/genome_length_cg.sh), [mash_multiqc.sh](URF_scripts/mash_multiqc.sh), [multiqc_config_URF_snakemake.yaml](URF_scripts/multiqc_config_URF_snakemake.yaml), [seqsero_multiqc.sh](URF_scripts/seqsero_multiqc.sh), and [seqyclean_multiqc.sh](URF_scripts/seqyclean_multiqc.sh))
 
 Usage:
 ```
-snakemake --snakefile UPHL_reference_free.smk --directory <path to directory*> --cores 24 --keep-going
+snakemake --snakefile UPHL_reference_free.smk --directory <path to *directory> --cores 24
 ```
-* indicates that directory contains paired-end fastq files in <directory>/Sequencing_reads/Raw
+* indicates that directory contains paired-end fastq files in *directory/Sequencing_reads/Raw
 
 There are two variables that will need to be adjusted: 
 - line 10: seqyclean_adaptors="/home/Bioinformatics/Data/SeqyClean_data/PhiX_174_plus_Adapters.fasta"
 - line 11: mash_sketches="/home/Bioinformatics/Data/RefSeqSketchesDefaults.msh"
 
-### 2. [OUTBREAK_120_core_trees.smk](OUTBREAK_120_core_trees.smk): UPHL's method of looking through files from the last 120 days.
-- requires [PLOTS_OUTBREAK_120_IQTREE.R](outbreak_120_scripts/PLOTS_OUTBREAK_120_IQTREE.R), [abricate_organize.sh](outbreak_120_scripts/abricate_organize.sh), [benchmark120_multiqc.sh](outbreak_120_scripts/benchmark120_multiqc.sh), [ggtree_plot_organize.sh](outbreak_120_scripts/ggtree_plot_organize.sh), [multiqc_config_outbreak120_snakemake.yaml](outbreak_120_scripts/multiqc_config_outbreak120_snakemake.yaml), [organism_multiqc.sh](outbreak_120_scripts/organism_multiqc.sh), and [roary_multiqc.sh](outbreak_120_scripts/roary_multiqc.sh)
+### 2. [OUTBREAK_120.smk](OUTBREAK_120.smk): UPHL's method of looking through files from the last 120 days.
+- requires [PLOTS_IQTREE.R](outbreak_120_scripts/PLOTS_IQTREE.R), [abricate_organize.sh](outbreak_120_scripts/abricate_organize.sh), [benchmark120_multiqc.sh](outbreak_120_scripts/benchmark120_multiqc.sh), [ggtree_plot_organize.sh](outbreak_120_scripts/ggtree_plot_organize.sh), [multiqc_config_outbreak120_snakemake.yaml](outbreak_120_scripts/multiqc_config_outbreak120_snakemake.yaml), [organism_multiqc.sh](outbreak_120_scripts/organism_multiqc.sh), and [roary_multiqc.sh](outbreak_120_scripts/roary_multiqc.sh)
 
 Usage:
 ```
