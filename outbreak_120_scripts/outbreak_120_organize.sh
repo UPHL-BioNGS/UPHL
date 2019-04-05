@@ -221,6 +221,7 @@ run_control ()
   Klebsiella_aerogenes_control.gff:other:Klebsiella:aerogenes
   Klebsiella_oxytoca_control.gff:other:Klebsiella:oxytoca
   Klebsiella_pneumoniae_control.gff:other:Klebsiella:pneumoniae
+  Legionella_pneumophila_control.gff:other:Legionella:pneumophila
   Listeria_monocytogenes_FA_control.gff:other:Listeria:monocytogenes
   Pantoea_ananatis_control.gff:other:Pantoea:ananatis
   Pseudomonas_aeruginosa_control.gff:other:Pseudomonas:aeruginosa
@@ -597,10 +598,12 @@ then
   cut $list_of_recnt -f 7 -d "/" > $out/$d/files/recent_files.txt
 
   date
-  for database in argannot card ecoh ecoli ecoli_vf ncbi plasmidfinder resfinder serotypefinder vfdb cpd
+#  for database in argannot card ecoh ecoli ecoli_vf ncbi plasmidfinder resfinder serotypefinder vfdb cpd
+  for database in ncbi serotypefinder
   do
     echo "Gathering abricate results for $database"
     ln -s $search_path/*/abricate_results/$database/*.out.tab $out/$d/serotyping_results/abricate/.
+    ln -s $search_path/*/ALL_assembled_plasmids/$database/*.out.tab $out/$d/serotyping_results/abricate/.
   done
   if [ -n "$(echo ${serotyping[@]} | grep seqsero)" ]
   then

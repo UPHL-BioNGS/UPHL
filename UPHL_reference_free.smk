@@ -3,15 +3,15 @@ import os
 import glob
 import shutil
 from os.path import join
-print("UPHL reference free pipeline v.2019.2.21")
+print("UPHL reference free pipeline v.2019.4.3")
 
-base_directory=workflow.basedir
+base_directory=workflow.basedir + "/URF_scripts"
 output_directory=os.getcwd()
 seqyclean_adaptors="/home/Bioinformatics/Data/SeqyClean_data/PhiX_174_plus_Adapters.fasta"
 mash_sketches="/home/Bioinformatics/Data/RefSeqSketchesDefaults.msh"
 
 SAMPLE, MIDDLE, EXTENSION = glob_wildcards('Sequencing_reads/Raw/{sample, [^_]+}_{middle}.f{extension}')
-DATABASE = ['argannot', 'resfinder', 'card', 'plasmidfinder', 'vfdb', 'ecoli_vf', 'ncbi', 'ecoh', 'serotypefinder', 'cpd']
+DATABASE = ['argannot', 'bacmet2', 'card', 'ecoh', 'ecoli_vf', 'ncbi', 'plasmidfinder', 'vfdb', 'serotypefinder', 'cpd']
 
 rule all:
     input:
@@ -52,7 +52,7 @@ rule all:
         expand("logs/abricate_results/{database}.summary.csv", database=DATABASE),
     params:
         output_directory=output_directory,
-        base_directory=workflow.basedir
+        base_directory=base_directory
     log:
         out="logs/all/all.log",
         err="logs/all/all.err"
@@ -136,7 +136,7 @@ rule seqyclean_multiqc:
     threads:
         1
     params:
-        base_directory= workflow.basedir,
+        base_directory=base_directory,
         output_directory= output_directory
     shell:
         "{params.base_directory}/seqyclean_multiqc.sh {params.output_directory} 2>> {log.err} | tee -a {log.out}"
@@ -323,7 +323,7 @@ rule mash_multiqc:
     threads:
         1
     params:
-        base_directory= workflow.basedir,
+        base_directory=base_directory,
         output_directory= output_directory
     shell:
         "{params.base_directory}/mash_multiqc.sh {params.output_directory} 2>> {log.err} | tee -a {log.out}"
@@ -492,7 +492,7 @@ rule CG_pipeline:
     benchmark:
         "logs/benchmark/cg_pipeline/{sample}.{raw_or_clean}.log"
     params:
-        base_directory=workflow.basedir
+        base_directory=base_directory
     run:
         shell("which run_assembly_readMetrics.pl 2>> {log.err} | tee -a {log.out}")
         if "PNUSAS" in wildcards.sample:
@@ -521,7 +521,7 @@ rule CG_pipeline_multiqc:
     threads:
         1
     params:
-        base_directory=workflow.basedir,
+        base_directory=base_directory,
         output_directory=output_directory
     shell:
         "{params.base_directory}/cgpipeline_multiqc.sh {params.output_directory} 2>> {log.err} | tee -a {log.out}"
@@ -568,7 +568,7 @@ rule seqsero_multiqc:
         out="logs/seqsero_multiqc/log.log",
         err="logs/seqsero_multiqc/log.err"
     params:
-        base_directory=workflow.basedir,
+        base_directory=base_directory,
         output_directory=output_directory
     threads:
         1

@@ -7,6 +7,7 @@ print("OUTBREAK_120 v.2019.1.4")
 
 DATE=str(datetime.date.today())
 working_directory=os.getcwd()
+base_directory=workflow.basedir + "/outbreak_120_scripts"
 kraken_mini_db="/home/IDGenomics_NAS/kraken_mini_db/minikraken_20141208"
 
 ANALYSIS_TYPE, GENUS, SPECIES= glob_wildcards('{ANALYSIS_TYPE}/{GENUS}/{SPECIES}/list_of_samples.txt')
@@ -28,12 +29,12 @@ rule all:
         # iqtree
         expand("{analysis_type}/{genus}/{species}/IQTREE/{genus}.{species}.iqtree.treefile", zip, analysis_type=ANALYSIS_TYPE, genus=GENUS, species=SPECIES),
         # ggtree
-        expand("{analysis_type}/{genus}/{species}/GGTREE/PLOTS_OUTBREAK_120_IQTREE.R", zip, analysis_type=ANALYSIS_TYPE, genus=GENUS, species=SPECIES),
+        expand("{analysis_type}/{genus}/{species}/GGTREE/PLOTS_IQTREE.R", zip, analysis_type=ANALYSIS_TYPE, genus=GENUS, species=SPECIES),
         expand("{analysis_type}/{genus}/{species}/GGTREE/{analysis_type}.{genus}.{species}.abricate_resistance.pdf", zip, analysis_type=ANALYSIS_TYPE, genus=GENUS, species=SPECIES),
         expand("results/{analysis_type}.{genus}.{species}.abricate_resistance.pdf", zip, analysis_type=ANALYSIS_TYPE, genus=GENUS, species=SPECIES),
     params:
         working_directory=working_directory,
-        base_directory=workflow.basedir
+        base_directory=base_directory
     threads:
         48
     log:
@@ -57,7 +58,7 @@ rule abricate:
     output:
         "{analysis_type}/{genus}/{species}/ABRICATE/abricate_presence_absence.csv"
     params:
-        base_directory= workflow.basedir,
+        base_directory=base_directory,
         working_directory=working_directory,
     log:
         log="logs/abricate_summary/{analysis_type}.{genus}.{species}.log",
@@ -69,7 +70,7 @@ rule abricate:
     run:
         shell("which abricate 2>> {log.err} | tee -a {log.log}")
         shell("abricate --version 2>> {log.err} | tee -a {log.log}")
-        shell("{params.base_directory}/abricate_organize.sh {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species} {output} {params.working_directory} 2>> {log.err} | tee -a {log.log} || true ")
+        shell("{params.base_directory}/abricate_organize.sh {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species} {output} {params.working_directory} 2>> {log.err} | tee -a {log.log} || true ; touch {output}")
 
 rule roary:
     input:
@@ -89,7 +90,7 @@ rule roary:
         shell("which roary 2>> {log.err} | tee -a {log.log}")
         shell("roary -w 2>> {log.err} | tee -a {log.log}")
         shell("if [ -d \"{wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/Roary_out\" ] ; then rm -R {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/Roary_out ; fi  2>> {log.err} | tee -a {log.log}")
-        shell("roary -p {threads} -f {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/Roary_out -e -n -qc -k {params} {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/*.gff --force 2>> {log.err} | tee -a {log.log}")
+        shell("roary -p {threads} -f {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/Roary_out -e -n -qc -k {params} {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/*.gff --force 2>> {log.err} | tee -a {log.log} || true ; touch {output} ")
         shell("touch {output}")
 
 rule iqtree:
@@ -110,7 +111,7 @@ rule iqtree:
     run:
         shell("which iqtree 2>> {log.err} | tee -a {log.log}")
         shell("iqtree --version 2>> {log.err} | tee -a {log.log}")
-        shell("iqtree -s {params.core_genome} -t RANDOM -m GTR+F+I -bb 1000 -alrt 1000 -pre {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/IQTREE/{wildcards.genus}.{wildcards.species}.iqtree -nt {threads} {params.control_file}  2>> {log.err} | tee -a {log.log}")
+        shell("iqtree -s {params.core_genome} -t RANDOM -m GTR+F+I -bb 1000 -alrt 1000 -pre {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/IQTREE/{wildcards.genus}.{wildcards.species}.iqtree -nt {threads} {params.control_file}  2>> {log.err} | tee -a {log.log} || true ; touch {output}")
 
 rule ggtree_create:
     input:
@@ -118,7 +119,7 @@ rule ggtree_create:
         roary_output=rules.roary.output,
         treefile=rules.iqtree.output,
     output:
-        "{analysis_type}/{genus}/{species}/GGTREE/PLOTS_OUTBREAK_120_IQTREE.R"
+        "{analysis_type}/{genus}/{species}/GGTREE/PLOTS_IQTREE.R"
     log:
         log="logs/ggtree_create/{analysis_type}.{genus}.{species}.log",
         err="logs/ggtree_create/{analysis_type}.{genus}.{species}.err"
@@ -127,7 +128,7 @@ rule ggtree_create:
     threads:
         1
     params:
-        base_directory=workflow.basedir,
+        base_directory=base_directory,
         working_directory=working_directory,
         date=DATE,
         roary_core_genome="{analysis_type}/{genus}/{species}/Roary_out/core_gene_alignment.aln",
@@ -141,7 +142,7 @@ rule ggtree_create:
         distance_tree="{analysis_type}/{genus}/{species}/GGTREE/{analysis_type}.{genus}.{species}.distance_tree",
     shell:
         "{params.base_directory}/ggtree_plot_organize.sh "
-        "{params.base_directory}/PLOTS_OUTBREAK_120_IQTREE.R "
+        "{params.base_directory}/PLOTS_IQTREE.R "
         "{input.treefile} "
         "{params.roary_gene_presence} "
         "{params.roary_core_genome} "
@@ -180,7 +181,7 @@ rule ggtree:
     threads:
         1
     shell:
-        "Rscript {input} 2>> {log.err} | tee -a {log.log}"
+        "Rscript {input} 2>> {log.err} | tee -a {log.log} || true ; touch {output}"
 
 rule ggtree_move:
     input:
@@ -202,5 +203,5 @@ rule ggtree_move:
     threads:
         1
     run:
-        shell("cp {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/GGTREE/*pdf results/. 2>> {log.err} | tee -a {log.log} || true")
-        shell("cp {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/GGTREE/*_mqc.jpg logs/results/. 2>> {log.err} | tee -a {log.log} || true")
+        shell("cp {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/GGTREE/*pdf results/. 2>> {log.err} | tee -a {log.log} || true ; touch {output}")
+        shell("cp {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/GGTREE/*_mqc.jpg logs/results/. 2>> {log.err} | tee -a {log.log} || true touch ; {output}")

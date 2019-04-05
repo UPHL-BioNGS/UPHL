@@ -5,23 +5,24 @@ echo "sample,x,y" > $out/logs/raw_clean_scatter.csv
 echo "sample x y" > $out/logs/raw_clean_coverage.txt
 
 FILE_TEMPLATE=(
-"raw_fastq_files:Sequencing_reads/Raw"
-"clean_fastq_files:Sequencing_reads/QCed"
-"fastqc_files:fastqc"
-"mash_file:mash"
-"shovill_file:ALL_assembled"
-"plasmid_shovill_file:ALL_assembled_plasmids"
-"prokka_file:ALL_gff"
-"plasmid_prokka_file:ALL_gff_plasmids"
-"seqsero_file:SeqSero"
-"cg-pipeline_files:cg-pipeline"
-"quast_file:quast"
-"plasmid_quast:quast_plasmids"
-"abricate_all:abricate_results/*"
-"plasmid_abricate_all:abricate_results_plasmids/*"
+"raw_fastq_files:Sequencing_reads/Raw:.f"
+"clean_fastq_files:Sequencing_reads/QCed:clean_*.fastq"
+"fastqc_files:fastqc:_fastqc."
+"mash_file:mash:.fastq.msh.distance.sorted.txt"
+"shovill_file:ALL_assembled:_contigs.fa"
+"plasmid_shovill_file:ALL_assembled_plasmids:_plasmidcontigs.fa"
+"prokka_file:ALL_gff:.gff"
+"plasmid_prokka_file:ALL_gff_plasmids:_plasmid.gff"
+"seqsero_file:SeqSero:.Seqsero_result.txt"
+"cg-pipeline_files:cg-pipeline:.out.txt"
+"quast_file:quast:report.txt"
+"plasmid_quast:quast_plasmids:report.txt"
+"abricate_all:abricate_results:.out.tab"
+"plasmid_abricate_all:abricate_results_plasmids:plasmids.out.tab"
 )
 
 wc -l abricate_results*/*/*out.tab | awk '{ if ( $1 == 1 ) print $2 }' | parallel " rm $out/{} ; touch $out/{} "
+grep -P "Predicted antigenic profile:\t-:-:-" SeqSero/*Seqsero_result.txt | cut -f 1 -d ":" | parallel " rm $out/{} ; touch $out/{} "
 analysis_types=($(history -p ${FILE_TEMPLATE[@]} | cut -f 1 -d ":" ))
 echo "sample\t${analysis_types[@]}" | tr ' ' '\t' | parallel "echo -e {} > $out/run_file_summary.txt "
 file_summary_header=($(head -n 1 $out/run_file_summary.txt ))
@@ -60,26 +61,24 @@ do
   FILES=("sample:$sample")
   for template in ${FILE_TEMPLATE[@]}
   do
-    analysis_directory="$(echo $template | cut -f 2 -d ':' )"
-    analysis="$(echo $template | cut -f 1 -d ':' )"
-    files=($(find $out/$analysis_directory/ -wholename *$pnusa* -size +0 -type f -not -name quast.log -not -iname *@*))
-    if [ -z "${files[0]}" ]
+    template_information=($(echo $template | awk -F ":" '{print $1 " " $2 " " $3}' ))
+    files=($(find $out/${template_information[1]} -wholename *$pnusa*${template_information[2]}* -size +0 -type f ))
+    if [ -n "${files[0]}" ]
     then
-      file="not_found,"
-    else
       file=$(echo ${files[@]} | tr ' ' ',' | tr '\t' ',' | tr '\n' ',' )
+    else
+      file="not_found,"
     fi
-    FILES=("$(echo -e "${FILES[@]}\t$analysis:$file" )")
+    FILES=("$(echo -e "${FILES[@]}\t${template_information[0]}:$file" )")
   done
+
   #########################################heatmap_of_files and summary_of_files
 
-#  echo "the history of files"
-#  history -p ${FILES[@]}
   file_summary=""
   file_heatmap=""
   for column in ${file_summary_header[@]}
   do
-    file=$(history -p ${FILES[@]} | sort | uniq | grep $column | cut -f 2 -d ":" | tr ' ' ',' | tr '\t' ',' | tr '\n' ',' )
+    file=$(history -p ${FILES[@]} | sort | uniq | awk -F ":" -v analysis=$column '{ if ($1==analysis) print $2}' | tr '\n' ' ' )
     if [ -z "$file_summary" ]
     then
       file_summary="$file"
