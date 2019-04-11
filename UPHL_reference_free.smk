@@ -542,7 +542,7 @@ rule seqsero:
         1
     run:
         shell("which SeqSero.py 2>> {log.err} | tee -a {log.out}")
-        shell("SeqSero.py -m 2 -d SeqSero/{wildcards.sample} -i {input} 2>> {log.err} | tee -a {log.out}")
+        shell("SeqSero.py -m 2 -d SeqSero/{wildcards.sample} -i {input} 2>> {log.err} | tee -a {log.out} || true ; touch {outptu} ")
 
 rule seqsero_move:
     input:
