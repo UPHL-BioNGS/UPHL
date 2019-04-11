@@ -189,12 +189,12 @@ rule ggtree_move:
         rules.ggtree.output.roary_gene_presence,
         rules.ggtree.output.abricate_resistance,
     output:
-        "results/{analysis_type}.{genus}.{species}.nucleotide_distance.pdf",
-        "results/{analysis_type}.{genus}.{species}.roary_gene_presence.pdf",
-        "results/{analysis_type}.{genus}.{species}.abricate_resistance.pdf",
-        "logs/results/{analysis_type}.{genus}.{species}.nucleotide_distance_mqc.jpg",
-        "logs/results/{analysis_type}.{genus}.{species}.roary_gene_presence_mqc.jpg",
-        "logs/results/{analysis_type}.{genus}.{species}.abricate_resistance_mqc.jpg",
+        pdf_dist="results/{analysis_type}.{genus}.{species}.nucleotide_distance.pdf",
+        pdf_gene="results/{analysis_type}.{genus}.{species}.roary_gene_presence.pdf",
+        pdf_abri="results/{analysis_type}.{genus}.{species}.abricate_resistance.pdf",
+        jpg_dist="logs/results/{analysis_type}.{genus}.{species}.nucleotide_distance_mqc.jpg",
+        jpg_gene="logs/results/{analysis_type}.{genus}.{species}.roary_gene_presence_mqc.jpg",
+        jpg_abri="logs/results/{analysis_type}.{genus}.{species}.abricate_resistance_mqc.jpg",
     log:
         log="logs/ggtree_move/{analysis_type}.{genus}.{species}.log",
         err="logs/ggtree_move/{analysis_type}.{genus}.{species}.err"
@@ -203,5 +203,5 @@ rule ggtree_move:
     threads:
         1
     run:
-        shell("cp {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/GGTREE/*pdf results/. 2>> {log.err} | tee -a {log.log} || true ; touch {output}")
-        shell("cp {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/GGTREE/*_mqc.jpg logs/results/. 2>> {log.err} | tee -a {log.log} || true touch ; {output}")
+        shell("cp {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/GGTREE/*pdf results/. 2>> {log.err} | tee -a {log.log} || true ; touch {output.pdf_dist} {output.pdf_gene} {output.pdf_abri}")
+        shell("cp {wildcards.analysis_type}/{wildcards.genus}/{wildcards.species}/GGTREE/*_mqc.jpg logs/results/. 2>> {log.err} | tee -a {log.log} || true ; touch {output.jpg_dist} {output.jpg_gene} {output.jpg_abri}")
