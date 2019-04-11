@@ -115,7 +115,8 @@ run_clean.prune ()
   date
   echo "Removing samples in the salmonella/salmonella/NAThepredictedantigenicprofiledoesnotexistintheWhite-Kauffmann-LeMinorscheme folder"
   ls $out/$d/salmonella/salmonella/NAThepredictedantigenicprofiledoesnotexistintheWhite-Kauffmann-LeMinorscheme/*gff | sed 's!.*/!!' | cut -d "." -f 1 | awk '{ print $0 "\tNA_salmonella" }' >> $out/$d/logs/samples.rm
-  rm -R $out/$d/salmonella/salmonella/NAThepredictedantigenicprofiledoesnotexistintheWhite-Kauffmann-LeMinorscheme
+  if [ -d "$out/$d/salmonella/salmonella/NAThepredictedantigenicprofiledoesnotexistintheWhite-Kauffmann-LeMinorscheme" ] ; then rm -R $out/$d/salmonella/salmonella/NAThepredictedantigenicprofiledoesnotexistintheWhite-Kauffmann-LeMinorscheme ; fi
+  if [ -d "$out/$d/salmonella/salmonella/none" ] ; then rm -R $out/$d/salmonella/salmonella/none ; fi
 
   if [ -d "$out/$d/other/Salmonella/enterica" ] && [ -d "$out/$d/salmonella/salmonella/all" ]
   then
@@ -446,6 +447,7 @@ run_organize.seqsero ()
     seqsero_file=$(ls $out/$d/serotyping_results/seqsero/$sample*Seqsero_result.txt | head -n 1 )
     seqsero_serotype=$(grep "Predicted serotype(s):" $seqsero_file | awk '{ $1=$2="" ; print $0 }' | perl -pe 's/[^\w.-]+//g' | sed 's/potentialmonophasicvariantof//g' | sed 's/O5-//g')
     echo "Seqsero results for $sample: $seqsero_serotype"
+    if [ -z "$seqsero_serotype" ] ; then seqsero_serotype="none" ; fi
 
     mkdir -p $out/$d/salmonella/salmonella/$seqsero_serotype
     ln -s $gff_file $out/$d/salmonella/salmonella/$seqsero_serotype/.
