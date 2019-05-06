@@ -165,8 +165,8 @@ run_clean.size ()
   d=$2
 
   date
-  wc -l $out/$d/*/*/*/*gff | awk '{ if ( $1 < 10000) print $2 "\tsize_too_small"}' >> $out/$d/logs/samples.rm
-  wc -l $out/$d/*/*/*/*gff | awk '{ if ( $1 < 10000) print $2 }' | xargs rm
+  ls $out/$d/*/*/*/ -d | parallel wc -l {}*gff | awk '{ if ( $1 < 10000) print $2 "\tsize_too_small"}' >> $out/$d/logs/samples.rm
+  ls $out/$d/*/*/*/ -d | parallel wc -l {}*gff | awk '{ if ( $1 < 10000) print $2 }' | xargs rm
 }
 run_control ()
 {
@@ -636,7 +636,6 @@ date
 echo "Removing samples with files that are too small"
 run_clean.size $out $d
 
-echo "recent flag is $recent_flag"
 date
 echo "Listing samples in directory"
 run_clean.recent $out $d $recent_flag
