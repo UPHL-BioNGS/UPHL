@@ -60,7 +60,7 @@ species="."
 
 #----#----#----#----#----#----#----#----#----#----#----#----#----#----#----#----
 
-while getopts 'ac:d:e:f:hi:m:o:p:s:t:P:' OPTION
+while getopts 'ac:d:e:f:hi:m:o:p:s:t:' OPTION
 do
   case "$OPTION" in
     a)
@@ -70,6 +70,11 @@ do
     c)
     echo "The controls are located in $OPTARG"
     control_path=$OPTARG
+    ;;
+    s)
+    echo "Ending date is now $OPTARG instead of $d"
+    d=$OPTARG
+    end_flag=1
     ;;
     d)
     echo "Looking for files that have been modified $OPTARG days prior"
@@ -124,15 +129,7 @@ do
     species=$OPTARG
     echo "Will look through results for samples that are $species"
     ;;
-    s)
-    echo "Ending date is now $OPTARG instead of $d"
-    d=$OPTARG
-    ;;
-    P)
-    echo "Adding $OPTARG to PATH"
-    PATH=$PATH:$OPTARG
-    echo "PATH is now $PATH"
-    ;;
+
     :)
     echo "Invalid option: $OPTARG requires an argument"
     echo "$USAGE"
@@ -345,7 +342,12 @@ echo "Looking through $search_path for gff files between $d and $pd"
 mkdir -p $out/$run_date/logs
 mkdir -p $out/$run_date/serotyping_results/abricate
 echo -e "sample\treason" > $out/$run_date/logs/samples.rm
-list_of_run_result_files=($(find $search_path -maxdepth 2 -newermt $pd ! -newermt $d -name run_results_summary.txt))
+if [ -n "$end_flag" ]
+then
+  list_of_run_result_files=($(find $search_path -maxdepth 2 -newermt $pd ! -newermt $d -name run_results_summary.txt))
+else
+  list_of_run_result_files=($(find $search_path -maxdepth 2 -newermt $pd -name run_results_summary.txt))
+fi
 
 if [ -z "$exclude_file" ]
 then
@@ -373,7 +375,12 @@ do
     sample=$(echo $line | awk -v col="$cvrg_column" '{ if ( $col>20 ) print $1}' )
     if [ -n "$sample" ]
     then
-      gff_file=$(find $search_path/$run/ALL_gff -maxdepth 1 -newermt $pd ! -newermt $d -iname $sample*.gff | head -n 1 )
+      if [ -n "$end_flag" ]
+      then
+        gff_file=$(find $search_path/$run/ALL_gff -maxdepth 1 -newermt $pd ! -newermt $d -iname $sample*.gff | head -n 1 )
+      else
+        gff_file=$(find $search_path/$run/ALL_gff -maxdepth 1 -newermt $pd -iname $sample*.gff | head -n 1 )
+      fi
       if [ -n "$gff_file" ]
       then
         mash_sero=($(echo $line | sed 's/\t/ /g' | cut -f $mash_column -d " " | sed 's/_/\t/g'))
