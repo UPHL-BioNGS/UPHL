@@ -88,7 +88,7 @@ do
     basemount /home/BaseSpace
   fi
   sleep 20m
-  test_file=$(timeout -k 2m 1m find /home/BioNGS_Prod/BaseSpace/Projects/$run/Samples/ -iname *$run*fastq.gz | head -n 1)
+  test_file=$(timeout -k 2m 1m find /home/BaseSpace/Projects/$run/Samples/ -iname *$run*fastq.gz | head -n 1)
 done
 
 mkdir -p /WGS_DIRECTORY/$sequencing_run/Sequencing_reads/Raw
