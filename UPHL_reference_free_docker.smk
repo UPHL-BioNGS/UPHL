@@ -495,7 +495,7 @@ rule abricate_multiqc:
     input:
         rules.abricate_summary.output
     output:
-        "results_for_multiqc/{database}.summary.csv"
+        "logs/abricate_results/{database}.summary.csv"
     log:
         err="logs/abricate_multiqc/{database}.err"
     threads:
