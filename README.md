@@ -1,5 +1,17 @@
-# UPHL-Reference-Free
-##### The UPHL-Reference-Free pipeline takes paired-end fastq files to contigs for microbial WGS. The pipeline utilizes the following programs, which must be included in PATH.
+![alt text](https://uphl.utah.gov/wp-content/uploads/New-UPHL-Logo.png)
+
+# Bioinformatics at the Utah Public Health Laboratory (UPHL)
+
+Bioinformatic analysis combines biology, computer science, mathematics, statistics, and engineering in order to analyze, interpret and make sense of the sequencing data.
+
+This analysis allows
+* For a better understanding of the genetic basis of disease
+* Aids in bacterial pathogen identification
+* Can ultimately assist with outbreak detection
+
+(More information can be found at [UPHL's website](https://uphl.utah.gov/infectious-diseases/next-generation-sequencing/))
+
+# The UPHL-Reference-Free pipeline takes paired-end fastq files to contigs for microbial WGS. The pipeline utilizes the following programs.
 - [seqyclean](https://github.com/ibest/seqyclean)
 - [shovill](https://github.com/tseemann/shovill)
 - [prokka](https://github.com/tseemann/prokka)
@@ -17,10 +29,87 @@
 - [ape](https://cran.r-project.org/web/packages/ape/index.html)
 - [ggtree](http://bioconductor.org/packages/release/bioc/html/ggtree.html)
 
-## A. The SNAKEMAKE files that connects everything at the Utah Public Health Laboratory
+# Automatic detection of new sequencing run completion and pipeline initiation. 
 
-### 1. [UPHL_reference_free.smk](UPHL_reference_free.smk): UPHL's reference-free pipeline as a set of snakemake rules 
-- (requires [benchmark_multiqc.sh](URF_scripts/benchmark_multiqc.sh), [cgpipeline_multiqc.sh](URF_scripts/cgpipeline_multiqc.sh), [check_multiqc.sh](URF_scripts/check_multiqc.sh), [genome_length_cg.sh](URF_scripts/genome_length_cg.sh), [mash_multiqc.sh](URF_scripts/mash_multiqc.sh), [multiqc_config_URF_snakemake.yaml](URF_scripts/multiqc_config_URF_snakemake.yaml), [seqsero_multiqc.sh](URF_scripts/seqsero_multiqc.sh), and [seqyclean_multiqc.sh](URF_scripts/seqyclean_multiqc.sh))
+Most of our sequencing is done on the Illumina MiSeq. Fastq generation is done through BaseSpace and seemless is transfer is made possible via [basemount](https://basemount.basespace.illumina.com/). 
+
+Mounting BaseSpace to our linux workstation:
+
+```
+basemount /home/BaseSpace
+```  
+
+Ideally, we look for new runs as they are completed and begin our pipeline. Basemount as two main folders for our purposes:
+`BaseSpace/Runs`
+and
+`BaseSpace/Projects`
+
+Although our script to do this is specific for our file structure, the essential principles can be used for any bash script:
+#### Part 1 : Finding a new run on basemount
+
+```
+while [ -d "/home/BaseSpace" ] # This directory _should_ always exist, so this keeps the while loop open
+do
+  basespace_runs=($(ls /home/BaseSpace/Runs/*/ -d | rev | cut -f 1 -d "/" | rev )) # lists all the runs in basespace
+  for sequencing_run in ${basespace_runs[@]}
+  do
+    if [ ! -d "/WGS_DIRECTORY/$sequencing_run" ]
+    then
+      echo "New sequencing run detected: $sequencing_run"
+      script_to_move_files_and_start_pipeline.sh "$sequencing_run"
+    else 
+      echo "No new sequencing run detected"
+    fi
+  done
+
+  sleep 10m # waits for 10 minutes
+  if [ -n "$(basemount-cmd --path /home/BaseSpace/Runs refresh | grep Error)" ] # refreshes basemount and if there's an error basemount is restarted
+  then
+    yes | basemount --unmount /home/BaseSpace
+    basemount /home/BaseSpace
+  fi
+
+done
+```
+#### Part 2 : Copying files from basemount and starting the pipeline
+
+_script_to_move_files_and_start_pipeline.sh_ probably contains a chunk of code like the following:
+
+```
+sequencing_run=$1
+
+test_file=$(timeout -k 2m 1m find /home/BaseSpace/Projects/$sequencing_run/Samples/ -iname *fastq.gz | head -n 1 )
+while [ -z "$test_file" ]
+do
+  echo "Fastq files are not located in /home/BaseSpace/Projects/$sequencing_run/Samples/"
+  if [ -n "$(basemount-cmd --path /home/BaseSpace/Projects refresh | grep Error)" ]
+  then
+    yes | basemount --unmount /home/BaseSpace
+    basemount /home/BaseSpace
+  fi
+  sleep 20m
+  test_file=$(timeout -k 2m 1m find /home/BioNGS_Prod/BaseSpace/Projects/$run/Samples/ -iname *$run*fastq.gz | head -n 1)
+done
+
+mkdir -p /WGS_DIRECTORY/$sequencing_run/Sequencing_reads/Raw
+
+echo "Copying files from /home/BaseSpace/Projects/$sequencing_run/Samples/*/Files/*fastq.gz to /WGS_DIRECTORY/$sequencing_run/Sequencing_reads/Raw/"
+cp /home/BaseSpace/Projects/$sequencing_run/Samples/*/Files/*$sequencing_run*fastq.gz /WGS_DIRECTORY/$sequencing_run/Sequencing_reads/Raw/.
+
+echo "Now starting snakemake"
+snakemake --snakefile /home/Bioinformatics/UPHL/UPHL_reference_free.smk --directory /WGS_DIRECTORY/$sequencing_run --cores 22 
+
+```
+
+Now all of the fastq files are in `/WGS_DIRECTORY/$sequencing_run/Sequencing_reads/Raw/`
+
+The snakefile will work for short-read pair-end fastq files that either end in formats like the following: `_R1_001.fastq.gz` (Illumina) or `_1.fastq` (SRA)
+
+## SNAKEMAKE WORKFLOWS for UPHL's pipelines
+
+### [UPHL_reference_free.smk](UPHL_reference_free.smk): UPHL's reference-free pipeline as a set of snakemake rules 
+- requires internal scripts [benchmark_multiqc.sh](URF_scripts/benchmark_multiqc.sh), [cgpipeline_multiqc.sh](URF_scripts/cgpipeline_multiqc.sh), [check_multiqc.sh](URF_scripts/check_multiqc.sh), [genome_length_cg.sh](URF_scripts/genome_length_cg.sh), [mash_multiqc.sh](URF_scripts/mash_multiqc.sh), [multiqc_config_URF_snakemake.yaml](URF_scripts/multiqc_config_URF_snakemake.yaml), [seqsero_multiqc.sh](URF_scripts/seqsero_multiqc.sh), and [seqyclean_multiqc.sh](URF_scripts/seqyclean_multiqc.sh)
+- requires external commands grep, touch, sed, awk, cat, find, parallel, multiqc, seqyclean, abricate, fastqc, shovill, mash, prokka, quast, cg-pipeline's run_assemply_shuffleReads.pl and run_assembly_readMetrics.pl, SeqSero.py
 
 Usage:
 ```
@@ -31,6 +120,22 @@ snakemake --snakefile UPHL_reference_free.smk --directory <path to *directory> -
 There are two variables that will need to be adjusted: 
 - line 10: seqyclean_adaptors="/home/Bioinformatics/Data/SeqyClean_data/PhiX_174_plus_Adapters.fasta"
 - line 11: mash_sketches="/home/Bioinformatics/Data/RefSeqSketchesDefaults.msh"
+
+### __OR__
+(since we are aware that using cloud computing is a popular option)
+
+### [UPHL_reference_free_docker.smk](UPHL_reference_free_docker.smk): UPHL's reference-free pipeline as a set of snakemake rules that are compatible with singularity images
+- (requires internal scripts [benchmark_multiqc.sh](URF_scripts/benchmark_multiqc.sh), [check_multiqc.sh](URF_scripts/check_multiqc.sh), [genome_length_cg.sh](URF_scripts/genome_length_cg.sh), [mash_multiqc.sh](URF_scripts/mash_multiqc.sh), [multiqc_config_URF_snakemake.yaml](URF_scripts/multiqc_config_URF_snakemake.yaml), and [seqsero_multiqc.sh](URF_scripts/seqsero_multiqc.sh))
+- requires external commands singularity, multiqc, grep, touch, sed, awk, cat, find, and parallel
+
+Usage:
+```
+snakemake --snakefile UPHL_reference_free_docker.smk --directory <path to *directory> --use-singularity --singularity-args "--bind <path to *directory>:/data" --cores 20
+```
+
+The majority of singularity containers are actually converted docker containers maintained by [STAPHB](../docker-builds)
+
+## Organizing recent organisms for outbreak and cluster detection:
 
 ### 2. [OUTBREAK_120.smk](OUTBREAK_120.smk): UPHL's method of looking through files from the last 120 days.
 - requires [PLOTS_IQTREE.R](outbreak_120_scripts/PLOTS_IQTREE.R), [abricate_organize.sh](outbreak_120_scripts/abricate_organize.sh), [benchmark120_multiqc.sh](outbreak_120_scripts/benchmark120_multiqc.sh), [ggtree_plot_organize.sh](outbreak_120_scripts/ggtree_plot_organize.sh), [multiqc_config_outbreak120_snakemake.yaml](outbreak_120_scripts/multiqc_config_outbreak120_snakemake.yaml), [organism_multiqc.sh](outbreak_120_scripts/organism_multiqc.sh), and [roary_multiqc.sh](outbreak_120_scripts/roary_multiqc.sh)
