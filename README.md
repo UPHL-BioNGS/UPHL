@@ -133,7 +133,7 @@ Usage:
 snakemake --snakefile UPHL_reference_free_docker.smk --directory <path to *directory> --use-singularity --singularity-args "--bind <path to *directory>:/data" --cores 20
 ```
 
-The majority of singularity containers are actually converted docker containers maintained by [STAPHB](../docker-builds)
+The majority of singularity containers are actually converted docker containers maintained by [STAPHB](https://github.com/StaPH-B/docker-builds)
 
 ## Organizing recent organisms for outbreak and cluster detection:
 
