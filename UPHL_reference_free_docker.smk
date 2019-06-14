@@ -275,7 +275,7 @@ rule prokka:
     benchmark:
         "logs/benchmark/prokka/{sample}.log"
     singularity:
-        "docker://staphb/prokka:1.13"
+        "docker://staphb/prokka:latest"
     shell:
         """
         if [ -s \"{input.mash_file}\" ]
