@@ -132,7 +132,7 @@ ggsave("FULLPATHTOGENETABLIMAGE.pdf", dpi = 900, width = 4)
 ggsave("FULLPATHTOGENETABLIMAGE_mqc.jpg", dpi = 900, width = 4)
 
 print("Creating heatmap with tree and nucleotide pairwise distance matrix")
-gheatmap(thetree + xlim_tree(largest_x * 1.2), reordered_distances, color = FALSE, colnames = TRUE, colnames_position = "top", colnames_angle = 90, font.size = distance_size, colnames_offset_y = 0, hjust = 0, offset = largest_x * 0.4) + labs(subtitle="Nucleotide pairwise distance matrix") + scale_fill_gradientn(colors = rev(magma(25)))
+gheatmap(thetree + xlim_tree(largest_x * 1.2), reordered_distances, color = FALSE, colnames = TRUE, colnames_position = "top", colnames_angle = 90, font.size = distance_size, colnames_offset_y = 0, hjust = 0, offset = largest_x * 0.4) + labs(subtitle="Nucleotide pairwise distance matrix") + scale_fill_gradientn(colors = rev(magma(25)), limits=c(0,0.01), na.value = "black")
 ggsave("FULLPATHTODISTANCEIMAGE.pdf", dpi = 900, width = 4)
 ggsave("FULLPATHTODISTANCEIMAGE_mqc.jpg", dpi = 900, width = 4)
 
