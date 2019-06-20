@@ -1,6 +1,7 @@
 custom_content:
   order:
     - mash_results
+    - mash_screen_results
     - seqsero_results
     - seqyclean_results
     - CG-Pipeline
@@ -158,6 +159,14 @@ custom_data:
     pconfig:
       id: 'mash_results'
       title: 'MASH results'
+      ylab: 'Organism counts'
+  mash_screen_results:
+    id: 'mash_screen_results'
+    section_name: 'MASH SCREEN Results'
+    plot_type: 'bargraph'
+    pconfig:
+      id: 'mash_screen_results'
+      title: 'MASH screen results'
       ylab: 'Organism counts'
   seqyclean_results:
       id: 'seqyclean_results'
@@ -464,6 +473,10 @@ custom_data:
     section_name: 'snakemake benchmark timings (in seconds)'
     plot_type: 'table'
 sp:
+  mash_results:
+    fn: 'mash_results.txt'
+  mash_screen_results:
+    fn: 'mash_screen_results.txt'
   abricate_resfinder:
     fn: 'resfinder.summary.csv'
   abricate_argannot:
@@ -488,8 +501,6 @@ sp:
     fn: 'serotypefinder.summary.csv'
   seqsero_results:
     fn: 'Seqsero_serotype_results.txt'
-  mash_results:
-    fn: 'mash_results.txt'
   seqyclean_results:
     fn: 'seqyclean_summary.txt'
   summary_of_files:
