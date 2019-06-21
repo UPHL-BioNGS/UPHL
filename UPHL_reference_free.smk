@@ -33,6 +33,7 @@ rule all:
         # mash results
         expand("mash/{sample}.clean_all.fastq.msh.distance.sorted.txt", sample=SAMPLE),
         "mash/mash_results.txt",
+        # mash screen
         expand("mash/{sample}_mashscreen.txt", sample=SAMPLE),
         "mash/mash_screen_results.txt",
         # prokka results
@@ -272,11 +273,11 @@ rule mash_sketch:
     benchmark:
         "logs/benchmark/mash_sketch/{sample}.log"
     threads:
-        1
+        5
     run:
         shell("which mash 2>> {log.err} | tee -a {log.out}")
         shell("mash --version 2>> {log.err} | tee -a {log.out}")
-        shell("mash sketch -m 2 {input} 2>> {log.err} | tee -a {log.out} || true ")
+        shell("mash sketch -m 2 -p {threads} {input} 2>> {log.err} | tee -a {log.out} || true ")
         shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
 
 rule mash_dist:
@@ -285,7 +286,7 @@ rule mash_dist:
     output:
         "mash/{sample}.clean_all.fastq.msh.distance.txt"
     threads:
-        48
+        5
     params:
         mash_sketches
     log:
@@ -343,11 +344,11 @@ rule mash_screen:
     benchmark:
         "logs/benchmark/mash_screen/{sample}.log"
     threads:
-        1
+        5
     params:
         mash_sketches
     shell:
-        "mash screen /home/Bioinformatics/Data/RefSeqSketches.msh {input.read1} {input.read2} | awk '{{ if ( $4 = 0 ) print $0 }}' > {output}"
+        "mash screen -p {threads} {params} -w -v 0 -i 0.95 {input.read1} {input.read2} > {output} || true ; touch {output}"
 
 rule mash_screen_multiqc:
     input:

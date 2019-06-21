@@ -1,7 +1,7 @@
 #!/bin/bash
 
 out=$1
-organisms=($(cat $out/mash/*sorted.txt | awk '{ if( $4==0 ) print $1 }' | awk -F "-.-" '{ print $NF }' | sed 's/.fna//g' | awk -F "_" '{ print $1 "_" $2 }' | sed 's/.-//g' | sort | uniq ))
+organisms=($(cat $out/mash/*sorted.txt | awk '{ if( $4 == 0 ) print $1 }' | cut -f 8 -d "-" | sed 's/^_\(.*\)/\1/' | cut -f 1,2 -d "_" | cut -f 1 -d "." | sort | uniq -c | sort -rhk 1,1 | awk '{ print $2 }' ))
 header="Sample"
 
 for organism in ${organisms[@]}
@@ -16,7 +16,7 @@ do
   mash_line=$mash_result
   for organism in ${organisms[@]}
   do
-    number=$(cat $out/mash/$mash_result*sorted.txt | awk '{ if( $4==0 ) print $1 }' | awk -F "-.-" '{ print $NF }' | sed 's/.fna//g' | awk -F "_" '{ print $1 "_" $2 }' | sed 's/.-//g' | sort | uniq -c | grep $organism | awk '{ print $1 }' )
+    number=$(cat $out/mash/$mash_result*sorted.txt | awk '{ if( $4 == 0 ) print $1 }' | cut -f 8 -d "-" | sed 's/^_\(.*\)/\1/' | cut -f 1,2 -d "_" | cut -f 1 -d "." | sort | uniq -c | grep $organism | awk '{ print $1 }' )
     if [ -z "$number" ]
     then
       number="0"
