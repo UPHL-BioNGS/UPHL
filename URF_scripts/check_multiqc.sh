@@ -119,7 +119,8 @@ do
   # mash_results
   if [ -n "$(find $out/mash -iname $sample*sorted.txt )" ]
   then
-    mash_results=($(cat $out/mash/$sample*sorted.txt | head -n 1 | cut -f 1 | awk -F "-.-" '{ print $NF }' | sed 's/.fna//g' | awk -F "_" '{ print $1 "\t" $2 "\t" $3 "\t" $4 }' ))
+#    mash_results=($(cat $out/mash/$sample*sorted.txt | head -n 1 | cut -f 1 | cut -f 8 -d "-" | sed 's/^_\(.*\)/\1/' | cut -f 1,2,3,4 -d "_" | cut -f 1 -d "." | awk -F "_" '{ print $1 "\t" $2 "\t" $3 "\t" $4 }' ))
+    mash_results=($(cat $out/mash/$sample*sorted.txt | head -n 1 | cut -f 1 | cut -f 8 -d "-" | sed 's/^_\(.*\)/\1/' | cut -f 1,2,3,4 -d "_" | cut -f 1 -d "." | tr "_" " " ))
     mash_result=$(echo "${mash_results[0]}""_""${mash_results[1]}""_""${mash_results[2]}""_""${mash_results[3]}")
     if [ -z "$mash_result" ]; then mash_result="no_result"; fi
     simple_mash_result=$(echo "${mash_results[0]}""_""${mash_results[1]}")
