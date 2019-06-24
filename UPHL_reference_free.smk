@@ -34,8 +34,8 @@ rule all:
         expand("mash/{sample}.clean_all.fastq.msh.distance.sorted.txt", sample=SAMPLE),
         "mash/mash_results.txt",
         # mash screen
-        expand("mash/{sample}_mashscreen.txt", sample=SAMPLE),
-        "mash/mash_screen_results.txt",
+#        expand("mash/{sample}_mashscreen.txt", sample=SAMPLE),
+#        "mash/mash_screen_results.txt",
         # prokka results
         expand("Prokka/{sample}/{sample}.gff", sample=SAMPLE),
         expand("Prokka_plasmids/{sample}/{sample}_plasmid.gff", sample=SAMPLE),
@@ -69,7 +69,7 @@ rule all:
         shell("{params.base_directory}/check_multiqc.sh {params.output_directory} 2>> {log.err} | tee -a {log.out}"),
         # getting all multiqc files into logs
         shell("mkdir -p results_for_multiqc 2>> {log.err} | tee -a {log.out}")
-        shell("cp mash/mash_*_results.txt results_for_multiqc/. 2>> {log.err} | tee -a {log.out}")
+        shell("cp mash/mash*results.txt results_for_multiqc/. 2>> {log.err} | tee -a {log.out}")
         shell("cp cg-pipeline/cg-pipeline-summary.txt results_for_multiqc/. 2>> {log.err} | tee -a {log.out}")
         shell("cp SeqSero/Seqsero_serotype_results*.txt results_for_multiqc/. 2>> {log.err} | tee -a {log.out}")
         shell("cp Sequencing_reads/Logs/seqyclean_summary.txt results_for_multiqc/. 2>> {log.err} | tee -a {log.out}")
@@ -217,7 +217,7 @@ rule plasmidshovill:
         read1=rules.seqyclean.output.read1,
         read2=rules.seqyclean.output.read2
     threads:
-        48
+        10
     log:
         out="logs/plasmidshovill/{sample}.log",
         err="logs/plasmidshovill/{sample}.err"
@@ -521,11 +521,12 @@ rule CG_pipeline_shuffle_clean:
 rule CG_pipeline:
     input:
         shuffled_fastq="Sequencing_reads/shuffled/{sample}_{raw_or_clean}_shuffled.fastq.gz",
-        quast_file="quast/{sample}/report.txt"
+        quast_file="quast/{sample}/report.txt",
+        mash_file=rules.mash_sort.output
     output:
         "cg-pipeline/{sample}.{raw_or_clean}.out.txt"
     threads:
-        48
+        10
     log:
         out="logs/cg_pipeline/{sample}.{raw_or_clean}.log",
         err="logs/cg_pipeline/{sample}.{raw_or_clean}.err"
@@ -544,7 +545,7 @@ rule CG_pipeline:
         elif "PNUSAL" in wildcards.sample:
             shell("run_assembly_readMetrics.pl {input.shuffled_fastq} --fast --numcpus {threads} -e 3000000 > {output} 2>> {log.err} || true")
         else:
-            shell("{params.base_directory}/genome_length_cg.sh {input.shuffled_fastq} {input.quast_file} {threads} {output} 2>> {log.err} | tee -a {log.out} || true")
+            shell("{params.base_directory}/genome_length_cg.sh {wildcards.sample} {threads} {output} {input.shuffled_fastq} 2>> {log.err} | tee -a {log.out} || true")
         shell("if [ ! -f {output} ] ; then touch {output} ; fi")
 
 
