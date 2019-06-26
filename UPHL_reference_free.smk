@@ -273,12 +273,11 @@ rule mash_sketch:
     benchmark:
         "logs/benchmark/mash_sketch/{sample}.log"
     threads:
-        5
+        1
     run:
         shell("which mash 2>> {log.err} | tee -a {log.out}")
         shell("mash --version 2>> {log.err} | tee -a {log.out}")
-        shell("mash sketch -m 2 -p {threads} {input} 2>> {log.err} | tee -a {log.out} || true ")
-        shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
+        shell("mash sketch -m 2 {input} 2>> {log.err} | tee -a {log.out} || true ; touch {output} ")
 
 rule mash_dist:
     input:
@@ -297,8 +296,7 @@ rule mash_dist:
     run:
         shell("which mash 2>> {log.err} | tee -a {log.out}")
         shell("mash --version 2>> {log.err} | tee -a {log.out}")
-        shell("mash dist -p {threads} {params} {input} > {output} 2>> {log.err} || true ")
-        shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
+        shell("mash dist -p {threads} {params} {input} > {output} 2>> {log.err} || true ; touch {output} ")
 
 rule mash_sort:
     input:
