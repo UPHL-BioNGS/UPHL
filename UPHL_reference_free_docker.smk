@@ -48,6 +48,7 @@ rule all:
         48
     run:
         # getting the Summary
+        shell("mkdir -p logs/all")
         shell("{params.base_directory}/check_multiqc.sh {params.output_directory} 2>> logs/all/all.err | tee -a logs/all/all.log || true "),
         shell("ln -s {params.output_directory}/fastqc {params.output_directory}/results_for_multiqc/fastqc 2>> logs/all/all.err | tee -a logs/all/all.log || true ")
         shell("cp Prokka*/*/*txt results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ")
@@ -98,7 +99,7 @@ rule seqyclean:
     shell:
         "seqyclean -minlen 25 -qual -c /Adapters_plus_PhiX_174.fasta -1 {input.read1} -2 {input.read2} -o Sequencing_reads/QCed/{wildcards.sample}_clean "
         "2>> {output.err} | tee -a {output.log} "
-        #"|| true ; touch {output}"
+        "|| true ; touch {output}"
 
 #Seqyclean Module pending
 #rule seqyclean_multiqc:
@@ -147,11 +148,11 @@ rule shovill:
     shell:
         "shovill --cpu {threads} --ram 200 --outdir shovill_result/{wildcards.sample} --R1 {input.read1} --R2 {input.read2} --force "
         "2>> {output.err} | tee -a {output.log} "
-        #"|| true ; touch {output} "
+        "|| true ; touch {output} "
 
 rule shovill_move:
     input:
-        rules.shovill.output
+        rules.shovill.output.file
     threads:
         1
     output:
@@ -177,7 +178,7 @@ rule mash_cat:
 
 rule mash_sketch:
     input:
-        rules.mash_cat.output
+        rules.mash_cat.output.file
     output:
         file="mash/{sample}.clean_all.fastq.msh",
         log="logs/mash_sketch/{sample}.log",
@@ -192,10 +193,12 @@ rule mash_sketch:
 
 rule mash_dist:
     input:
-        rules.mash_sketch.output
+        rules.mash_sketch.output.file
     output:
         file="mash/{sample}.clean_all.fastq.msh.distance.txt",
         err="logs/mash_dist/{sample}.err"
+    threads:
+        1
     singularity:
         "docker://staphb/mash:latest"
     shell:
@@ -204,7 +207,7 @@ rule mash_dist:
 
 rule mash_sort:
     input:
-        rules.mash_dist.output
+        rules.mash_dist.output.file
     output:
         file="mash/{sample}.clean_all.fastq.msh.distance.sorted.txt",
         err="logs/mash_sort/{sample}.err"
@@ -230,8 +233,8 @@ rule mash_multiqc:
 
 rule prokka:
     input:
-        contig_file=rules.shovill_move.output,
-        mash_file=rules.mash_sort.output
+        contig_file=rules.shovill_move.output.file,
+        mash_file=rules.mash_sort.output.file
     threads:
         48
     output:
@@ -245,14 +248,15 @@ rule prokka:
         if [ -s \"{input.mash_file}\" ]
         then
         mash_result=($(head -n 1 {input.mash_file} | cut -f 1 | awk -F \"-.-\" '{{ print $NF }}' | sed 's/.fna//g' | awk -F \"_\" '{{ print $1 \" \" $2 }}' ))
-        prokka --cpu {threads} --compliant --centre --URF --mincontiglen 500 --outdir Prokka/{wildcards.sample} --locustag locus_tag --prefix {wildcards.sample} --genus ${{mash_result[0]}} --species ${{mash_result[1]}} --force {input.contig_file} 2>> {output.err} | tee -a {output.log} || true
+        prokka --cpu {threads} --compliant --centre --URF --mincontiglen 500 --outdir Prokka/{wildcards.sample} --locustag locus_tag --prefix {wildcards.sample} --genus ${{mash_result[0]}} --species ${{mash_result[1]}} --force {input.contig_file} 2>> {output.err} | tee -a {output.log} ;
+        #|| true
         fi
-        touch {output}
+        #touch {output}
         """
 
 rule prokka_move:
     input:
-        rules.prokka.output
+        rules.prokka.output.file
     output:
         file="ALL_gff/{sample}.gff",
         log="logs/prokka_move/{sample}.log",
@@ -264,7 +268,7 @@ rule prokka_move:
 
 rule quast:
     input:
-        rules.shovill_move.output
+        rules.shovill_move.output.file
     output:
         file="quast/{sample}/report.txt",
         log="logs/quast/{sample}.log",
@@ -388,7 +392,7 @@ rule seqsero_multiqc:
 
 rule abricate:
     input:
-        rules.shovill_move.output
+        rules.shovill_move.output.file
     output:
         file="abricate_results/{database}/{database}.{sample}.out.tab",
         err="logs/abricate/{sample}.{database}.err"
@@ -416,7 +420,7 @@ rule abricate_summary:
 
 rule abricate_multiqc:
     input:
-        rules.abricate_summary.output
+        rules.abricate_summary.output.file
     output:
         file="logs/abricate_results/{database}.summary.csv",
         err="logs/abricate_multiqc/{database}.err"
