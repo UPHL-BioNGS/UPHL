@@ -24,5 +24,5 @@ do
     fi
     mash_line=$(echo "$mash_line\t$number" )
   done
-echo -e "$mash_line" #>> $out/mash/mash_results.txt
+echo -e "$mash_line" >> $out/mash/mash_results.txt
 done
