@@ -18,7 +18,7 @@ rule all:
         # running seqyclean
         expand("Sequencing_reads/QCed/{sample}_clean_PE1.fastq", sample=SAMPLE),
         expand("Sequencing_reads/QCed/{sample}_clean_PE2.fastq", sample=SAMPLE),
-        "results_for_multiqc/seqyclean_summary.txt",
+        #"results_for_multiqc/seqyclean_summary.txt",
         # running FastQC
         "fastqc/fastqc.complete",
         # running shovill
@@ -98,7 +98,7 @@ rule seqyclean:
     shell:
         "seqyclean -minlen 25 -qual -c /Adapters_plus_PhiX_174.fasta -1 {input.read1} -2 {input.read2} -o Sequencing_reads/QCed/{wildcards.sample}_clean "
         "2>> {output.err} | tee -a {output.log} "
-        "|| true ; touch {output}"
+        #"|| true ; touch {output}"
 
 #Seqyclean Module pending
 #rule seqyclean_multiqc:
@@ -147,7 +147,7 @@ rule shovill:
     shell:
         "shovill --cpu {threads} --ram 200 --outdir shovill_result/{wildcards.sample} --R1 {input.read1} --R2 {input.read2} --force "
         "2>> {output.err} | tee -a {output.log} "
-        "|| true ; touch {output} "
+        #"|| true ; touch {output} "
 
 rule shovill_move:
     input:
@@ -159,7 +159,7 @@ rule shovill_move:
         err="logs/shovill_move/{sample}.err",
         log="logs/shovill_move/{sample}.log"
     shell:
-        "cp {input} {output} 2>> {output.err} | tee -a {output.log} ; "
+        "cp {input} {output.file} 2>> {output.err} | tee -a {output.log} ; "
         "touch {output}"
 
 rule mash_cat:
