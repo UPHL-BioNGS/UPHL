@@ -29,13 +29,11 @@ bootstrap_values[is.na(bootstrap_values)] <- 0
 bootstrap_values[bootstrap_values == ""] <- 0
 bootstrap_values[which(thetree$data$isTip==TRUE)] <- 0
 bootstrap_and_nodes <- data.frame(thetree$data$node, sub("/.*", "", bootstrap_values), sub(".*/", "", bootstrap_values), stringsAsFactors = FALSE)
-#bootstrap_and_nodes <- data.frame(thetree$data$node, sub("_.*", "", bootstrap_values), sub(".*_", "", bootstrap_values), stringsAsFactors = FALSE)
 colnames(bootstrap_and_nodes) <- c("node", "bootstrap","UFboot" )
 bootstrap_and_nodes$bootstrap <- as.numeric(bootstrap_and_nodes$bootstrap)
 bootstrap_and_nodes$UFboot    <- as.numeric(bootstrap_and_nodes$UFboot)
 bootstrapped_tree <- thetree %<+% bootstrap_and_nodes
 bootstrap_tree <- bootstrapped_tree + geom_nodepoint(aes(subset = as.numeric (bootstrap) > 70, color = bootstrap), size = 0.5) + scale_color_continuous(low="yellow", high="black") + labs(subtitle="Nodes labeled with bootstrap values") + theme(legend.position="right")
-#UFboot_tree <- bootstrapped_tree + geom_nodepoint(aes(subset = as.numeric (UFboot) > 70, color = UFboot), size = 0.5) + scale_color_continuous(low="yellow", high="black") + labs(subtitle="Nodes labeled with UFboot values") + theme(legend.position="right")
 bootstrap_tree
 ggsave("FULLPATHTOBOOTSTRAPTREEIMAGE.pdf", dpi = 900)
 ggsave("FULLPATHTOBOOTSTRAPTREEIMAGE_mqc.jpg", dpi = 900)
@@ -55,6 +53,9 @@ alignment <- read.alignment("FULLPATHTOROARYALIGNMENT", format = "fasta")
 alignment_DNAbin <- as.DNAbin(alignment)
 alignment_dist <-dist.dna(alignment_DNAbin,variance = TRUE, gamma = TRUE, base.freq = TRUE)
 distances <- as.data.frame(as.matrix(alignment_dist))
+distances_uncontrolled <- distances[, -grep("control", colnames(distances))]
+distances_uncontrolled <- distances[-grep("control", colnames(distances)),]
+under_max <- max(distances_uncontrolled)
 print("Pairwise nucleotide distances have been calculated")
 
 print("Sorting the nucleotide distances matrix for iqtree tree")
@@ -108,10 +109,14 @@ ggsave("FULLPATHTOGENETABLIMAGE.pdf", dpi = 900, width = 4)
 ggsave("FULLPATHTOGENETABLIMAGE_mqc.jpg", dpi = 900, width = 4)
 
 print("Creating heatmap with tree and nucleotide pairwise distance matrix")
-#gheatmap(thetree + xlim_tree(largest_x * 1.2), reordered_distances, color = FALSE, colnames = TRUE, colnames_position = "top", colnames_angle = 90, font.size = distance_size, colnames_offset_y = 0, hjust = 0, offset = largest_x * 0.4) + labs(subtitle="Nucleotide pairwise distance matrix") + scale_fill_gradientn(colors = rev(magma(25)), limits=c(0,0.01), na.value = "black")
 gheatmap(thetree + xlim_tree(largest_x * 1.2), reordered_distances, color = FALSE, colnames = TRUE, colnames_position = "top", colnames_angle = 90, font.size = distance_size, colnames_offset_y = 0, hjust = 0, offset = largest_x * 0.4) + labs(subtitle="Nucleotide pairwise distance matrix") + scale_fill_gradientn(colors = rev(magma(25)))
 ggsave("FULLPATHTODISTANCEIMAGE.pdf", dpi = 900, width = 4)
 ggsave("FULLPATHTODISTANCEIMAGE_mqc.jpg", dpi = 900, width = 4)
+
+print("Creating heatmap with tree and nucleotide pairwise distance matrix with limits")
+gheatmap(thetree + xlim_tree(largest_x * 1.2), reordered_distances, color = FALSE, colnames = TRUE, colnames_position = "top", colnames_angle = 90, font.size = distance_size, colnames_offset_y = 0, hjust = 0, offset = largest_x * 0.4) + labs(subtitle="Nucleotide pairwise distance matrix") + scale_fill_gradientn(colors = rev(magma(25)), limits = c( 0 , under_max ), na.value="black")
+ggsave("FULLPATHTODISTANCEIMAGE_limited.pdf", dpi = 900, width = 4)
+ggsave("FULLPATHTODISTANCEIMAGE_limited_mqc.jpg", dpi = 900, width = 4)
 
 print("Creating heatmap with tree and resistence gene presence/absence table")
 gheatmap(thetree + xlim_tree(largest_x * 1.2), resist_table, low="white", high = "black", color = FALSE, colnames = TRUE, colnames_position = "top", colnames_angle = 90, font.size = resist_size, colnames_offset_y = 0, hjust = 0, offset = largest_x * 0.4) + labs(subtitle="Resistence gene presence/absence")
