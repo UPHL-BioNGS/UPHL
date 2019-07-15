@@ -53,9 +53,6 @@ alignment <- read.alignment("FULLPATHTOROARYALIGNMENT", format = "fasta")
 alignment_DNAbin <- as.DNAbin(alignment)
 alignment_dist <-dist.dna(alignment_DNAbin,variance = TRUE, gamma = TRUE, base.freq = TRUE)
 distances <- as.data.frame(as.matrix(alignment_dist))
-distances_uncontrolled <- distances[, -grep("control", colnames(distances))]
-distances_uncontrolled <- distances[-grep("control", colnames(distances)),]
-under_max <- max(distances_uncontrolled)
 print("Pairwise nucleotide distances have been calculated")
 
 print("Sorting the nucleotide distances matrix for iqtree tree")
@@ -63,6 +60,7 @@ thetree_datasubset <- subset(thetree$data,thetree$data$isTip==TRUE)
 thetree_datasubset_sorted <- thetree_datasubset[order(thetree_datasubset$y, decreasing = TRUE),]
 sorted_labels <- thetree_datasubset_sorted[,1]
 reordered_distances <- distances[sorted_labels]
+under_max <- max(reordered_distances[-grep("control", colnames(reordered_distances)),-grep("control", colnames(reordered_distances))])
 print("The pairwise nucleotide distances table is complete")
 
 # creating the resistence gene heatmap
