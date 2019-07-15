@@ -39,32 +39,7 @@ bootstrap_tree <- bootstrapped_tree + geom_nodepoint(aes(subset = as.numeric (bo
 bootstrap_tree
 ggsave("FULLPATHTOBOOTSTRAPTREEIMAGE.pdf", dpi = 900)
 ggsave("FULLPATHTOBOOTSTRAPTREEIMAGE_mqc.jpg", dpi = 900)
-#UFboot_tree
-#ggsave("FULLPATHTO_UFBOOT_TREE_IMAGE.pdf", dpi = 900)
-#ggsave("FULLPATHTO_UFBOOT_TREE_IMAGE_mqc.jpg", dpi = 900)
 print("Bootstraps have been assigned to iqtree tree")
-
-# finding distances for iqtree
-#print("Finding average distance of clade for each node in iqtree tree")
-#distance_tree <- thetree
-#df_distance = data.frame()
-#for(i in 1:tree$Nnode) {
-#  subtree <- subtrees(tree)[[i]]
-# 	tree_dist <- cophenetic(subtree)
-#  mean_clade_distance <- mean(tree_dist)
-#	tips_for_i <- c(subtrees(tree)[[i]]$tip.label)
-#	first <- tips_for_i[1]
-#  last  <- tips_for_i[length(tips_for_i)]
-#  node_number <- MRCA(thetree, tip = c(first,last))
-#  df <- data.frame(node_number, mean_clade_distance)
-#  df_distance <- rbind(df_distance,df)
-#  }
-#distance_tree$data$label[which(distance_tree$data$isTip==FALSE)] <- distance_tree$data$node[which(distance_tree$data$isTip==FALSE)]
-#distance_tree <- distance_tree %<+% df_distance
-#distance_tree <- distance_tree + geom_nodepoint(aes(color=mean_clade_distance), size=0.5) + scale_color_continuous(low="yellow", high="black") + labs(subtitle="Nodes labeled with average distance in clade") + theme(legend.position="right")
-#distance_tree
-#ggsave("FULLPATHTODISTANCETREEIMAGE.pdf", dpi = 900)
-#ggsave("FULLPATHTODISTANCETREEIMAGE_mqc.jpg", dpi = 900)
 
 # creating the gene presence/absence heatmap
 print("Reading gene presense/absence table from Roary")
@@ -93,12 +68,13 @@ print("The pairwise nucleotide distances table is complete")
 print("Creating tables from Abricate resistence results")
 resist_table <- read.csv("FULLPATHTOABRICATE_TABLE", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
 resist_table_rows <- resist_table[,1]
-resist_table <- resist_table[,-1]
+resist_table_columns <- colnames(resist_table)
+resist_table_columns <- resist_table_columns[-1]
+resist_table <- as.matrix(resist_table[,-1])
+row.names(resist_table) <- resist_table_rows
+colnames(resist_table) <- resist_table_columns
 resist_table[is.na(resist_table)] <- 0
 resist_table[resist_table == "."] <- 0
-resist_table = as.matrix(as.data.frame(lapply(resist_table, as.numeric)))
-row.names(resist_table) <- resist_table_rows
-resist_table <- resist_table[,order(colSums(resist_table), decreasing = TRUE)]
 print("Table of resistence gene presence/absence is complete")
 
 largest_x <- thetree$data$x[order(thetree$data$x, decreasing = TRUE)[1]]
@@ -127,7 +103,7 @@ resist_size <- 0.25
 
 # the tree plus heatmaps
 print("Creating heatmap with tree and gene presence/absence table")
-gheatmap(thetree + xlim_tree(largest_x * 1.2), gene_table, low="white", high = "black", color = FALSE, colnames=FALSE, offset = largest_x * 0.4) + labs(subtitle="Roary gene presence/absence")
+gheatmap(thetree + xlim_tree(largest_x * 1.2), gene_table, low="white", high = "black", color = FALSE, colnames=FALSE, offset = largest_x * 0.4) + labs(subtitle="Roary gene presence/absence") + guides(fill=FALSE)
 ggsave("FULLPATHTOGENETABLIMAGE.pdf", dpi = 900, width = 4)
 ggsave("FULLPATHTOGENETABLIMAGE_mqc.jpg", dpi = 900, width = 4)
 
