@@ -60,7 +60,11 @@ thetree_datasubset <- subset(thetree$data,thetree$data$isTip==TRUE)
 thetree_datasubset_sorted <- thetree_datasubset[order(thetree_datasubset$y, decreasing = TRUE),]
 sorted_labels <- thetree_datasubset_sorted[,1]
 reordered_distances <- distances[sorted_labels]
-under_max <- max(reordered_distances[-grep("control", colnames(reordered_distances)),-grep("control", colnames(reordered_distances))])
+if (!('control' %in% reordered_distances)) {
+  under_max <- max(reordered_distances)
+} else {
+  under_max <- max(reordered_distances[-grep("control", row.names(reordered_distances)),-grep("control", colnames(reordered_distances))])
+}
 print("The pairwise nucleotide distances table is complete")
 
 # creating the resistence gene heatmap
