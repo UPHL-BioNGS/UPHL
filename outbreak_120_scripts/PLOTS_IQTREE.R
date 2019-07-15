@@ -78,6 +78,7 @@ row.names(resist_table) <- resist_table_rows
 colnames(resist_table) <- resist_table_columns
 resist_table[is.na(resist_table)] <- 0
 resist_table[resist_table == "."] <- 0
+resist_table <- resist_table[,order(colSums(resist_table), decreasing = TRUE)]
 print("Table of resistence gene presence/absence is complete")
 
 largest_x <- thetree$data$x[order(thetree$data$x, decreasing = TRUE)[1]]
