@@ -75,10 +75,18 @@ resist_table_columns <- colnames(resist_table)
 resist_table_columns <- resist_table_columns[-1]
 resist_table <- as.matrix(resist_table[,-1])
 row.names(resist_table) <- resist_table_rows
-colnames(resist_table) <- resist_table_columns
+if ( resist_table_columns[1] == "" ) {
+  colnames(resist_table)[1] <- "none"
+} else {
+  colnames(resist_table) <- resist_table_columns
+}
 resist_table[is.na(resist_table)] <- 0
 resist_table[resist_table == "."] <- 0
-resist_table <- resist_table[,order(colSums(resist_table), decreasing = TRUE)]
+if ( ncol(resist_table) == 1 ) {
+  resist_table <- resist_table
+} else {
+  resist_table <- resist_table[,order(colSums(resist_table), decreasing = TRUE)]
+}
 print("Table of resistence gene presence/absence is complete")
 
 largest_x <- thetree$data$x[order(thetree$data$x, decreasing = TRUE)[1]]
