@@ -29,9 +29,13 @@ rule all:
         expand("shovill_result_plasmid/{sample}/contigs.fa", sample=SAMPLE),
         expand("ALL_assembled/{sample}_contigs.fa", sample=SAMPLE),
         expand("ALL_assembled_plasmids/{sample}_plasmidcontigs.fa", sample=SAMPLE),
+        expand("results_for_multiqc/{sample}_flash.hist", sample=SAMPLE),
         # mash results
         expand("mash/{sample}.clean_all.fastq.msh.distance.sorted.txt", sample=SAMPLE),
         "mash/mash_results.txt",
+        # mash screen
+#        expand("mash/{sample}_mashscreen.txt", sample=SAMPLE),
+#        "mash/mash_screen_results.txt",
         # prokka results
         expand("Prokka/{sample}/{sample}.gff", sample=SAMPLE),
         expand("Prokka_plasmids/{sample}/{sample}_plasmid.gff", sample=SAMPLE),
@@ -65,7 +69,7 @@ rule all:
         shell("{params.base_directory}/check_multiqc.sh {params.output_directory} 2>> {log.err} | tee -a {log.out}"),
         # getting all multiqc files into logs
         shell("mkdir -p results_for_multiqc 2>> {log.err} | tee -a {log.out}")
-        shell("cp mash/mash_results.txt results_for_multiqc/. 2>> {log.err} | tee -a {log.out}")
+        shell("cp mash/mash*results.txt results_for_multiqc/. 2>> {log.err} | tee -a {log.out}")
         shell("cp cg-pipeline/cg-pipeline-summary.txt results_for_multiqc/. 2>> {log.err} | tee -a {log.out}")
         shell("cp SeqSero/Seqsero_serotype_results*.txt results_for_multiqc/. 2>> {log.err} | tee -a {log.out}")
         shell("cp Sequencing_reads/Logs/seqyclean_summary.txt results_for_multiqc/. 2>> {log.err} | tee -a {log.out}")
@@ -103,11 +107,11 @@ rule seqyclean:
         read1= get_read1,
         read2= get_read2
     output:
-        "Sequencing_reads/QCed/{sample}_clean_PE1.fastq",
-        "Sequencing_reads/QCed/{sample}_clean_PE2.fastq",
-        "Sequencing_reads/QCed/{sample}_clean_SE.fastq",
-        "Sequencing_reads/Logs/{sample}_clean_SummaryStatistics.txt",
-        "Sequencing_reads/Logs/{sample}_clean_SummaryStatistics.tsv"
+        read1="Sequencing_reads/QCed/{sample}_clean_PE1.fastq",
+        read2="Sequencing_reads/QCed/{sample}_clean_PE2.fastq",
+        redse="Sequencing_reads/QCed/{sample}_clean_SE.fastq",
+        sstxt="Sequencing_reads/Logs/{sample}_clean_SummaryStatistics.txt",
+        sstsv="Sequencing_reads/Logs/{sample}_clean_SummaryStatistics.tsv"
     params:
         seqyclean_adaptors
     threads:
@@ -176,8 +180,8 @@ rule fastqc_raw:
 
 rule shovill:
     input:
-        read1="Sequencing_reads/QCed/{sample}_clean_PE1.fastq",
-        read2="Sequencing_reads/QCed/{sample}_clean_PE2.fastq"
+        read1=rules.seqyclean.output.read1,
+        read2=rules.seqyclean.output.read2
     threads:
         48
     log:
@@ -195,7 +199,7 @@ rule shovill:
 
 rule shovill_move:
     input:
-        "shovill_result/{sample}/contigs.fa"
+        rules.shovill.output
     log:
         out="logs/shovill_move/{sample}.log",
         err="logs/shovill_move/{sample}.err"
@@ -210,26 +214,26 @@ rule shovill_move:
 
 rule plasmidshovill:
     input:
-        read1="Sequencing_reads/QCed/{sample}_clean_PE1.fastq",
-        read2="Sequencing_reads/QCed/{sample}_clean_PE2.fastq"
+        read1=rules.seqyclean.output.read1,
+        read2=rules.seqyclean.output.read2
     threads:
-        48
+        10
     log:
         out="logs/plasmidshovill/{sample}.log",
         err="logs/plasmidshovill/{sample}.err"
     benchmark:
         "logs/benchmark/plasmidshovill/{sample}.log"
     output:
-        "shovill_result_plasmid/{sample}/contigs.fa",
+        contig="shovill_result_plasmid/{sample}/contigs.fa",
+        flash="shovill_result_plasmid/{sample}/flash.hist"
     run:
         shell("which shovill 2>> {log.err} | tee -a {log.out}")
         shell("shovill --version 2>> {log.err} | tee -a {log.out}")
-        shell("shovill --cpu {threads} --ram 200 --opts \"--plasmid\" --outdir shovill_result_plasmid/{wildcards.sample} --R1 {input.read1} --R2 {input.read2} --force 2>> {log.err} | tee -a {log.out} || true ")
-        shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
+        shell("shovill --cpu {threads} --ram 200 --opts \"--plasmid\" --outdir shovill_result_plasmid/{wildcards.sample} --R1 {input.read1} --R2 {input.read2} --force 2>> {log.err} | tee -a {log.out} || true ; touch {output}")
 
 rule plasmidshovill_move:
     input:
-        rules.plasmidshovill.output
+        rules.plasmidshovill.output.contig
     log:
         out="logs/plasmidshovill_move/{sample}.log",
         err="logs/plasmidshovill_move/{sample}.err"
@@ -244,9 +248,9 @@ rule plasmidshovill_move:
 
 rule mash_cat:
     input:
-        "Sequencing_reads/QCed/{sample}_clean_PE1.fastq",
-        "Sequencing_reads/QCed/{sample}_clean_PE2.fastq",
-        "Sequencing_reads/QCed/{sample}_clean_SE.fastq"
+        rules.seqyclean.output.read1,
+        rules.seqyclean.output.read2,
+        rules.seqyclean.output.redse
     output:
         "mash/{sample}.clean_all.fastq"
     log:
@@ -273,8 +277,7 @@ rule mash_sketch:
     run:
         shell("which mash 2>> {log.err} | tee -a {log.out}")
         shell("mash --version 2>> {log.err} | tee -a {log.out}")
-        shell("mash sketch -m 2 {input} 2>> {log.err} | tee -a {log.out} || true ")
-        shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
+        shell("mash sketch -m 2 {input} 2>> {log.err} | tee -a {log.out} || true ; touch {output} ")
 
 rule mash_dist:
     input:
@@ -282,7 +285,7 @@ rule mash_dist:
     output:
         "mash/{sample}.clean_all.fastq.msh.distance.txt"
     threads:
-        48
+        5
     params:
         mash_sketches
     log:
@@ -293,8 +296,7 @@ rule mash_dist:
     run:
         shell("which mash 2>> {log.err} | tee -a {log.out}")
         shell("mash --version 2>> {log.err} | tee -a {log.out}")
-        shell("mash dist -p {threads} {params} {input} > {output} 2>> {log.err} || true ")
-        shell("if [ ! -f {output} ] ; then touch {output} ; fi ")
+        shell("mash dist -p {threads} {params} {input} > {output} 2>> {log.err} || true ; touch {output} ")
 
 rule mash_sort:
     input:
@@ -327,6 +329,42 @@ rule mash_multiqc:
         output_directory= output_directory
     shell:
         "{params.base_directory}/mash_multiqc.sh {params.output_directory} 2>> {log.err} | tee -a {log.out}"
+
+rule mash_screen:
+    input:
+        read1=rules.seqyclean.output.read1,
+        read2=rules.seqyclean.output.read2
+    output:
+        "mash/{sample}_mashscreen.txt"
+    log:
+        out="logs/mash_screen/{sample}.log",
+        err="logs/mash_screen/{sample}.err"
+    benchmark:
+        "logs/benchmark/mash_screen/{sample}.log"
+    threads:
+        5
+    params:
+        mash_sketches
+    shell:
+        "mash screen -p {threads} {params} -w -v 0 -i 0.95 {input.read1} {input.read2} > {output} || true ; touch {output}"
+
+rule mash_screen_multiqc:
+    input:
+        expand("mash/{sample}_mashscreen.txt", sample=SAMPLE)
+    output:
+        "mash/mash_screen_results.txt"
+    log:
+        out="logs/mash_screen_multiqc/log.log",
+        err="logs/mash_screen_multiqc/log/err"
+    benchmark:
+        "logs/benchmarks/mash_screen_multiqc/log.log"
+    threads:
+        1
+    params:
+        base_directory=base_directory,
+        output_directory= output_directory
+    shell:
+        "{params.base_directory}/mash_screen_multiqc.sh {params.output_directory} 2>> {log.err} | tee -a {log.out}"
 
 rule prokka:
     input:
@@ -463,8 +501,8 @@ rule CG_pipeline_shuffle_raw:
 
 rule CG_pipeline_shuffle_clean:
     input:
-        read1="Sequencing_reads/QCed/{sample}_clean_PE1.fastq",
-        read2="Sequencing_reads/QCed/{sample}_clean_PE2.fastq"
+        read1=rules.seqyclean.output.read1,
+        read2=rules.seqyclean.output.read2
     output:
         "Sequencing_reads/shuffled/{sample}_clean_shuffled.fastq.gz"
     log:
@@ -481,11 +519,12 @@ rule CG_pipeline_shuffle_clean:
 rule CG_pipeline:
     input:
         shuffled_fastq="Sequencing_reads/shuffled/{sample}_{raw_or_clean}_shuffled.fastq.gz",
-        quast_file="quast/{sample}/report.txt"
+        quast_file="quast/{sample}/report.txt",
+        mash_file=rules.mash_sort.output
     output:
         "cg-pipeline/{sample}.{raw_or_clean}.out.txt"
     threads:
-        48
+        10
     log:
         out="logs/cg_pipeline/{sample}.{raw_or_clean}.log",
         err="logs/cg_pipeline/{sample}.{raw_or_clean}.err"
@@ -504,7 +543,7 @@ rule CG_pipeline:
         elif "PNUSAL" in wildcards.sample:
             shell("run_assembly_readMetrics.pl {input.shuffled_fastq} --fast --numcpus {threads} -e 3000000 > {output} 2>> {log.err} || true")
         else:
-            shell("{params.base_directory}/genome_length_cg.sh {input.shuffled_fastq} {input.quast_file} {threads} {output} 2>> {log.err} | tee -a {log.out} || true")
+            shell("{params.base_directory}/genome_length_cg.sh {wildcards.sample} {threads} {output} {input.shuffled_fastq} 2>> {log.err} | tee -a {log.out} || true")
         shell("if [ ! -f {output} ] ; then touch {output} ; fi")
 
 
@@ -528,11 +567,11 @@ rule CG_pipeline_multiqc:
 
 rule seqsero:
     input:
-        "Sequencing_reads/QCed/{sample}_clean_PE1.fastq",
-        "Sequencing_reads/QCed/{sample}_clean_PE2.fastq"
+        rules.seqyclean.output.read1,
+        rules.seqyclean.output.read2
     output:
-        "SeqSero/{sample}/Seqsero_result.txt",
-        "SeqSero/{sample}/data_log.txt"
+        result="SeqSero/{sample}/Seqsero_result.txt",
+        datlog="SeqSero/{sample}/data_log.txt"
     log:
         out="logs/seqsero/{sample}.log",
         err="logs/seqsero/{sample}.err"
@@ -546,7 +585,7 @@ rule seqsero:
 
 rule seqsero_move:
     input:
-        "SeqSero/{sample}/Seqsero_result.txt"
+        rules.seqsero.output.result
     output:
         "SeqSero/{sample}.Seqsero_result.txt"
     log:
@@ -646,3 +685,18 @@ rule abricate_multiqc:
         "awk '{{ $2=\"\" ; print $0 }}' | sed 's/\\t/,/g' | sed 's/ /,/g' | "
         "sed 's/[.],/0,/g' | sed 's/,[.]/,0/g' | sed 's/,,/,/g' "
         "> {output} 2>> {log.err}"
+
+rule flash_move:
+    input:
+        rules.plasmidshovill.output.flash
+    log:
+        out="logs/flash_move/{sample}.log",
+        err="logs/flash_move/{sample}.err"
+    benchmark:
+        "logs/benchmark/flash_move/{sample}.log"
+    threads:
+        1
+    output:
+        "results_for_multiqc/{sample}_flash.hist"
+    shell:
+        "cp {input} {output} 2>> {log.err} | tee -a {log.out}"

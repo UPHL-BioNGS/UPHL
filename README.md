@@ -12,22 +12,73 @@ This analysis allows
 (More information can be found at [UPHL's website](https://uphl.utah.gov/infectious-diseases/next-generation-sequencing/))
 
 # The UPHL-Reference-Free pipeline takes paired-end fastq files to contigs for microbial WGS. The pipeline utilizes the following programs.
-- [seqyclean](https://github.com/ibest/seqyclean)
+- [seqyclean](https://github.com/ibest/seqyclean)  
+```
+seqyclean -minlen 25 -qual -c Adapters.fasta -1 sample_raw1.fastq -2 sample_raw2.fastq -o sample_clean
+```
 - [shovill](https://github.com/tseemann/shovill)
+```
+shovill --cpu 48 --ram 200 --outdir shovill_result/sample --R1 sample_cleanPE1.fastq --R2 sample_cleanPE2.fastq
+```
 - [prokka](https://github.com/tseemann/prokka)
+```
+prokka --cpu 48 --compliant --centre --UPHL --mincontiglen 500 --outdir Prokka/sample --locustag locus_tag --prefix sample --genus $genus --species $species --force shovill_result/sample/contigs.fa 
+```
 - [fastqc](https://github.com/s-andrews/FastQC)
+```
+fastqc *fastq*
+```
 - [cg-pipeline](https://github.com/lskatz/CG-Pipeline)
+```
+run_assembly_shuffleReads.pl -gz sample_raw1.fastq sample_raw2.fastq > sample_shuffled.fastq
+run_assembly_readMetrics.pl sample_shuffled.fastq --fast --numcpus 48 -e $genome_size
+```
 - [quast](https://github.com/ablab/quast)
+```
+quast shovill_result/sample/contigs.fa --output-dir quast/sample
+```
 - [multiqc](https://github.com/ewels/MultiQC)
+```
+multiqc .
+```
 - [mash](https://github.com/marbl/Mash)
+```
+cat sample_cleanPE1.fastq sample_cleanPE2.fastq sample_cleanSE.fastq > sample_all.fastq
+mash sketch -m 2 sample_all.fastq
+mash dist RefSeqSketchesDefaults.msh sample_all.fastq.msh > sample_all.fastq.msh.distance.txt
+```
 - [seqsero](https://github.com/denglab/SeqSero)
+```
+SeqSero.py -m 2 -d SeqSero/sample -i sample_cleanPE1.fastq sample_cleanPE2.fastq
+```
 - [abricate](https://github.com/tseemann/abricate)
+```
+abricate --db database --threads 48 shovill_result/sample/contigs.fa > database.sample.out.tab
+abricate --summary database*out.tab > database.summary.txt
+```
 
 ##### To turn this data into trees, the gff files generated with prokka are put through roary and iqtree with visualization done with ggtree (in R)
 - [roary](https://github.com/sanger-pathogens/Roary)
+```
+roary -p 48 -f Roary_out -e -n -qc -k kraken_mini_db/minikraken_20141208 Prokka/*/*.gff
+```
 - [iqtree](http://www.iqtree.org/)
-- [ape](https://cran.r-project.org/web/packages/ape/index.html)
-- [ggtree](http://bioconductor.org/packages/release/bioc/html/ggtree.html)
+```
+iqtree -s Roary_out/core_gene_alignment.aln -t RANDOM -m GTR+F+I -bb 1000 -alrt 1000 -pre sample.iqtree -nt 48 -o $control
+```
+- [ape](https://cran.r-project.org/web/packages/ape/index.html) & [ggtree](http://bioconductor.org/packages/release/bioc/html/ggtree.html) (For more information, see [PLOTS_IQTREE.R](outbreak_120_scripts/PLOTS_IQTREE.R))
+```
+library(ggplot2)
+library(ggtree)
+library(treeio)
+library(seqinr)
+library(ape)
+library(ade4)
+library(gplots)
+library(ggstance)
+library(phytools)
+library(viridis)
+```
 
 # Automatic detection of new sequencing run completion and pipeline initiation. 
 
@@ -88,7 +139,7 @@ do
     basemount /home/BaseSpace
   fi
   sleep 20m
-  test_file=$(timeout -k 2m 1m find /home/BioNGS_Prod/BaseSpace/Projects/$run/Samples/ -iname *$run*fastq.gz | head -n 1)
+  test_file=$(timeout -k 2m 1m find /home/BaseSpace/Projects/$run/Samples/ -iname *$run*fastq.gz | head -n 1)
 done
 
 mkdir -p /WGS_DIRECTORY/$sequencing_run/Sequencing_reads/Raw
@@ -133,7 +184,7 @@ Usage:
 snakemake --snakefile UPHL_reference_free_docker.smk --directory <path to *directory> --use-singularity --singularity-args "--bind <path to *directory>:/data" --cores 20
 ```
 
-The majority of singularity containers are actually converted docker containers maintained by [STAPHB](../docker-builds)
+The majority of singularity containers are actually converted docker containers maintained by [STAPHB](https://github.com/StaPH-B/docker-builds)
 
 ## Organizing recent organisms for outbreak and cluster detection:
 

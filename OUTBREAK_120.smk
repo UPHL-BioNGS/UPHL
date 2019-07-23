@@ -171,8 +171,8 @@ rule ggtree:
         abricate_resistance="{analysis_type}/{genus}/{species}/GGTREE/{analysis_type}.{genus}.{species}.abricate_resistance.pdf",
         tree="{analysis_type}/{genus}/{species}/GGTREE/{analysis_type}.{genus}.{species}.tree.pdf",
         bootstrap_tree="{analysis_type}/{genus}/{species}/GGTREE/{analysis_type}.{genus}.{species}.bootstrap_tree.pdf",
-        UFboot_tree="{analysis_type}/{genus}/{species}/GGTREE/{analysis_type}.{genus}.{species}.UFboot_tree.pdf",
-        distance_tree="{analysis_type}/{genus}/{species}/GGTREE/{analysis_type}.{genus}.{species}.distance_tree.pdf",
+        #UFboot_tree="{analysis_type}/{genus}/{species}/GGTREE/{analysis_type}.{genus}.{species}.UFboot_tree.pdf",
+        #distance_tree="{analysis_type}/{genus}/{species}/GGTREE/{analysis_type}.{genus}.{species}.distance_tree.pdf",
     log:
         log="logs/ggtree/{analysis_type}.{genus}.{species}.log",
         err="logs/ggtree/{analysis_type}.{genus}.{species}.err"
