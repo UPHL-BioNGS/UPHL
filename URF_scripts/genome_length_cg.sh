@@ -143,14 +143,7 @@ genome_size=("Acinetobacter_baumanii:4.34"
 
 
 mash_result=($(head -n 1 mash/$sample*sorted.txt | cut -f 1 | cut -f 8 -d "-" | sed 's/^_\(.*\)/\1/' | cut -f 1,2 -d "_" | cut -f 1 -d "." ))
-
-if [ -z $mash_result ]
-then
-  genome_length=$(grep 'Total length (>= 0 bp)' quast/$sample/report.txt | grep -v "All statistics" | sed 's/Total length (>= 0 bp)//g' | sed 's/ //g')
-else
-  genome_length=$(history -p ${genome_size[@]} | grep $mash_result | cut -f 2 -d ":" | parallel "echo {}*1000000" | bc | cut -f 1 -d "." )
-fi
-
-echo "The length of the genome is $genome_length "
+genome_length=$(history -p ${genome_size[@]} | grep $mash_result | cut -f 2 -d ":" | parallel "echo {}*1000000" | bc | cut -f 1 -d "." )
+if [ -z $genome_length ] ; then genome_length=$(grep 'Total length (>= 0 bp)' quast/$sample/report.txt | grep -v "All statistics" | sed 's/Total length (>= 0 bp)//g' | sed 's/ //g') ; fi
 
 run_assembly_readMetrics.pl $input --fast --numcpus $threads -e $genome_length > $outfile
