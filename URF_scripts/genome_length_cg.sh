@@ -146,4 +146,6 @@ mash_result=($(head -n 1 mash/$sample*sorted.txt | cut -f 1 | cut -f 8 -d "-" | 
 genome_length=$(history -p ${genome_size[@]} | grep $mash_result | cut -f 2 -d ":" | parallel "echo {}*1000000" | bc | cut -f 1 -d "." )
 if [ -z $genome_length ] ; then genome_length=$(grep 'Total length (>= 0 bp)' quast/$sample/report.txt | grep -v "All statistics" | sed 's/Total length (>= 0 bp)//g' | sed 's/ //g') ; fi
 
+echo "The genome length for $sample is $genome_length"
+
 run_assembly_readMetrics.pl $input --fast --numcpus $threads -e $genome_length > $outfile
