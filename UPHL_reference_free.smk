@@ -54,6 +54,13 @@ rule all:
         expand("abricate_results/{database}/{database}.{sample}.out.tab", sample=SAMPLE, database=DATABASE),
         expand("abricate_results_plasmids/{database}/{database}.{sample}.plasmids.out.tab", sample=SAMPLE, database=DATABASE),
         expand("logs/abricate_results/{database}.summary.csv", database=DATABASE),
+        #blobtools
+        expand("bwa/{sample}.sorted.bam", sample=SAMPLE),
+        expand("blast/{sample}.tsv", sample=SAMPLE),
+        expand("blobtools/{sample}.sorted.bam.cov", sample=SAMPLE),
+        expand("blobtools/{sample}.blobDB.json", sample=SAMPLE),
+        expand("blobtools/{sample}.blobDB.table.txt", sample=SAMPLE),
+        expand("blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.bam0.png", sample=SAMPLE),
     params:
         output_directory=output_directory,
         base_directory=base_directory
@@ -700,3 +707,78 @@ rule flash_move:
         "results_for_multiqc/{sample}_flash.hist"
     shell:
         "cp {input} {output} 2>> {log.err} | tee -a {log.out}"
+
+rule bwa_index:
+    input:
+        rules.shovill.output
+    output:
+        "shovill_result/{sample}/contigs.fa.sa"
+    shell:
+        "bwa index {input}"
+
+rule bwa:
+    input:
+        contig=rules.shovill.output,
+        read1=rules.seqyclean.output.read1,
+        read2=rules.seqyclean.output.read2,
+        index=rules.bwa_index.output
+    threads:
+        48
+    output:
+        bam="bwa/{sample}.sorted.bam",
+        bai="bwa/{sample}.sorted.bam.bai"
+    shell:
+        "bwa mem -t {threads} {input.contig} {input.read1} {input.read2} | samtools sort -o {output.bam} ; "
+        "samtools index {output.bam} "
+
+rule blastn:
+    input:
+        rules.shovill.output
+    output:
+        "blast/{sample}.tsv"
+    threads:
+        10
+    shell:
+        "blastn -query {input} -out {output} -num_threads {threads} -db /home/Bioinformatics/Data/blastdb/nt -outfmt '6 qseqid staxids bitscore std' -max_target_seqs 10 -max_hsps 1 -evalue 1e-25"
+
+rule blobtools_create:
+    input:
+        contig=rules.shovill.output,
+        blast=rules.blastn.output,
+        bam=rules.bwa.output.bam
+    output:
+        cov="blobtools/{sample}.sorted.bam.cov",
+        json="blobtools/{sample}.blobDB.json"
+    threads:
+        1
+    conda:
+        "~/anaconda3/envs/blobtools"
+    shell:
+        "blobtools create -o blobtools/ -i {input.contig} -b {input.bam} -t {input.blast}"
+
+rule blobtools_view:
+    input:
+        rules.blobtools_create.output.json,
+    output:
+        "blobtools/{sample}.blobDB.table.txt"
+    threads:
+        1
+    conda:
+        "~/anaconda3/envs/blobtools"
+    shell:
+        "blobtools view -i {input} -o blobtools/"
+
+rule blobtools_plot:
+    input:
+        table=rules.blobtools_view.output,
+        json=rules.blobtools_create.output.json
+    output:
+        "blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.bam0.png",
+        "blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.read_cov.bam0.png",
+        "blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.stats.txt"
+    threads:
+        1
+    conda:
+        "~/anaconda3/envs/blobtools"
+    shell:
+        "blobtools plot -i {input.json} -o blobtools/ -r species --format png"
