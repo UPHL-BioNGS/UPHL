@@ -55,12 +55,11 @@ rule all:
         expand("abricate_results_plasmids/{database}/{database}.{sample}.plasmids.out.tab", sample=SAMPLE, database=DATABASE),
         expand("logs/abricate_results/{database}.summary.csv", database=DATABASE),
         #blobtools
-        #expand("bwa/{sample}.sorted.bam", sample=SAMPLE),
-        #expand("blast/{sample}.tsv", sample=SAMPLE),
-        #expand("blobtools/{sample}.sorted.bam.cov", sample=SAMPLE),
-        #expand("blobtools/{sample}.blobDB.json", sample=SAMPLE),
-        #expand("blobtools/{sample}.blobDB.table.txt", sample=SAMPLE),
-        #expand("blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.bam0.png", sample=SAMPLE),
+        expand("bwa/{sample}.sorted.bam", sample=SAMPLE),
+        expand("blast/{sample}.tsv", sample=SAMPLE),
+        expand("blobtools/{sample}.blobDB.json", sample=SAMPLE),
+        expand("blobtools/{sample}.blobDB.table.txt", sample=SAMPLE),
+        expand("blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.bam0.png", sample=SAMPLE),
     params:
         output_directory=output_directory,
         base_directory=base_directory
@@ -747,14 +746,14 @@ rule blobtools_create:
         blast=rules.blastn.output,
         bam=rules.bwa.output.bam
     output:
-        cov="blobtools/{sample}.sorted.bam.cov",
+        cov="blobtools/{sample}.{sample}.sorted.bam.cov",
         json="blobtools/{sample}.blobDB.json"
     threads:
         1
     conda:
         "/home/eriny/anaconda3/envs/blobtools"
     shell:
-        "blobtools create -o blobtools/ -i {input.contig} -b {input.bam} -t {input.blast}"
+        "blobtools create -o blobtools/{wildcards.sample} -i {input.contig} -b {input.bam} -t {input.blast}"
 
 rule blobtools_view:
     input:
