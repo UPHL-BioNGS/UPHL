@@ -101,21 +101,6 @@ rule seqyclean:
         "2>> {output.err} | tee -a {output.log} "
         "|| true ; touch {output}"
 
-#Seqyclean Module pending
-#rule seqyclean_multiqc:
-#    input:
-#        expand("Sequencing_reads/QCed/{sample}_clean_SummaryStatistics.tsv", sample=SAMPLE)
-#    output:
-#        file="results_for_multiqc/seqyclean_summary.txt",
-#        err="logs/seqyclean_multiqc/log.err",
-#        log="logs/seqyclean_multiqc/log.log"
-#    threads:
-#        1
-#    shell:
-#        "grep \"Version\" Sequencing_reads/QCed/*clean_SummaryStatistics.tsv | head -n 1 | cut -f 2- -d \':\' | cut -f 2- | awk '{{ print \"Sample,\" $0 }}' | sed 's/PE1PE2/PE1,PE2/g' | sed 's/ /,/g' | sed 's/\\t/,/g' | sed 's/,,/,/g'  2>> logs/seqyclean_multiqc/log.err | tee -a {output.file} ; "
-#        "grep \"Sequencing_reads\" Sequencing_reads/QCed/*_clean_SummaryStatistics.tsv | cut -f 2- -d \':\' | sort | uniq | cut -f 2- | awk \'{{ print $1 \" \" $0 }}\' | awk '{{ sub(\"^.*/\", \"\", $1); print $0 }}' | awk '{{ sub(\"_.*fastq.*,\", \"\", $1 ); print $0 }}' | sed 's/ /,/g' | sed 's/\\t/,/g' | sed 's/,,/,/g' 2>> logs/seqyclean_multiqc/log.err | tee -a {output.file} ; "
-#        "touch {output}"
-
 rule fastqc:
     input:
         expand("Sequencing_reads/QCed/{sample}_clean_PE1.fastq", sample=SAMPLE),
