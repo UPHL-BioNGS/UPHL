@@ -13,6 +13,21 @@ DATABASE = [ 'ncbi', 'serotypefinder' ]
 
 rule all:
     input:
+        "logs/final.txt"
+    singularity:
+        "docker://ewels/multiqc:1.7"
+    params:
+        output_directory=output_directory,
+        base_directory=base_directory
+    shell:
+        "date >> logs/all/all.log ; " # time stamp
+        "multiqc --version 2>> logs/all/all.err | tee -a logs/all/all.log ; "
+        "wget https://raw.githubusercontent.com/StaPH-B/UPHL/master/URF_scripts/multiqc_config_URF_snakemake.yaml 2>> logs/all/all.err | tee -a logs/all/all.log ; "
+        "mv multiqc_config_URF_snakemake.yaml multiqc_config.yaml 2>> logs/all/all.err | tee -a logs/all/all.log ; "
+        "multiqc -f --outdir {params.output_directory}/logs --cl_config \"prokka_fn_snames: True\" {params.output_directory}/results_for_multiqc 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
+
+rule moving:
+    input:
         # copying files over
         expand("Sequencing_reads/Raw/{sample}_{middle}.f{extension}", zip, sample=SAMPLE, middle=MIDDLE, extension=EXTENSION),
         # running seqyclean
@@ -40,37 +55,46 @@ rule all:
         # abricate results
         expand("abricate_results/{database}/{database}.{sample}.out.tab", sample=SAMPLE, database=DATABASE),
         expand("logs/abricate_results/{database}.summary.csv", database=DATABASE),
+    output:
+        "logs/final.txt"
     params:
         output_directory=output_directory,
         base_directory=base_directory
-    singularity:
-        "docker://ewels/multiqc:1.7"
     shell:
         # getting the results in the right places
         "mkdir -p logs/all ; "
         "mkdir -p results_for_multiqc ; "
-        "{params.base_directory}/check_multiqc_docker.sh                      {params.output_directory}                            2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
+        "echo -e \"made it here!\n\" ; "
+        "{params.base_directory}/check_multiqc_docker.sh                      {params.output_directory}                            2>> logs/all/all.err | tee -a logs/all/all.log ; "
+        "echo -e \"made it here!a\n\" ; "
         "ln -s {params.output_directory}/fastqc                               {params.output_directory}/results_for_multiqc/fastqc 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
+        "echo -e \"made it here!1\n\" ; "
         "ln -s {params.output_directory}/Prokka*/*/*txt                       {params.output_directory}/results_for_multiqc/.      2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
+        "echo -e \"made it here!2\n\" ; "
         "ln -s {params.output_directory}/SeqSero/Seqsero_serotype_results.txt {params.output_directory}/results_for_multiqc/.      2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
+        "echo -e \"made it here!3\n\" ; "
         "ln -s {params.output_directory}/mash/mash_results.txt                {params.output_directory}/results_for_multiqc/.      2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
+        "echo -e \"made it here!4\n\" ; "
         "ln -s {params.output_directory}/cg-pipeline/cg-pipeline-summary.txt  {params.output_directory}/results_for_multiqc/.      2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
+        "echo -e \"made it here!5\n\" ; "
         "ln -s {params.output_directory}/logs/abricate_results/*.summary.csv  {params.output_directory}/results_for_multiqc/.      2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
+        "echo -e \"made it here!6\n\" ; "
         "ln -s {params.output_directory}/quast                                {params.output_directory}/results_for_multiqc/.      2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
+        "echo -e \"made it here!7\n\" ; "
         "ln -s {params.output_directory}/logs/File_heatmap.csv                {params.output_directory}/results_for_multiqc/.      2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
+        "echo -e \"made it here!8\n\" ; "
         "ln -s {params.output_directory}/logs/raw_clean_coverage.txt          {params.output_directory}/results_for_multiqc/.      2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
+        "echo -e \"made it here!9\n\" ; "
         "ln -s {params.output_directory}/logs/raw_clean_scatter.csv           {params.output_directory}/results_for_multiqc/.      2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
+        "echo -e \"made it here!10\n\" ; "
         "ln -s {params.output_directory}/run_file_summary.txt                 {params.output_directory}/results_for_multiqc/.      2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
         # formatting for multiqc
         "cat run_results_summary.txt | sed 's/simple_mash_result/A.simple_mash_result/g' | sed 's/simple_seqsero_result/B.simple_seqsero_result/g' | "
         "sed 's/abricate_serotype_O/C.abricate_serotype_O/g' | sed 's/abricate_serotype_H/D.abricate_serotype_H/g' | sed 's/fastqc_raw_reads_2/E.fastqc_raw_reads_2/g' | "
         "sed 's/fastqc_clean_reads_PE2/F.fastqc_clean_reads_PE2/g' | sed 's/cg_raw_coverage/G.cg_raw_coverage/g' | sed 's/cg_cln_coverage/H.cg_cln_coverage/g' | "
         "sed 's/ncbi/J.ncbi_antibiotic_resistence_genes/g' | sed 's/stxeae_result/I.stx_and_eae_virulence_factor_result/g' > results_for_multiqc/run_results_summary.txt || true ; "
-        # running multiqc
-        "date >> logs/all/all.log ; " # time stamp
-        "multiqc --version 2>> logs/all/all.err | tee -a logs/all/all.log ; "
-        "cp {params.base_directory}/multiqc_config_URF_snakemake.yaml multiqc_config.yaml 2>> logs/all/all.err | tee -a logs/all/all.log ; "
-        "multiqc -f --outdir {params.output_directory}/logs --cl_config \"prokka_fn_snames: True\" {params.output_directory}/results_for_multiqc 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
+        "touch {output}"
+
 
 def get_read1(wildcards):
     read1=glob.glob("Sequencing_reads/Raw/" + wildcards.sample + "*_R1_001.fastq.gz") + glob.glob("Sequencing_reads/Raw/" + wildcards.sample + "_1.fastq")
@@ -298,20 +322,11 @@ rule CG_pipeline_shuffle_clean:
         "run_assembly_shuffleReads.pl -gz {input.read1} {input.read2} > {output.file} 2>> {output.err} "
         "|| true ; touch {output} "
 
-rule genome_size:
-    input:
-        "{workflow.basedir}/genome_sizes.txt"
-    output:
-        "logs/genome_sizes.txt"
-    shell:
-        "cp {input} {output}"
-
 rule CG_pipeline:
     input:
         shuffled_fastq="Sequencing_reads/shuffled/{sample}_{raw_or_clean}_shuffled.fastq.gz",
         mash_error=rules.mash_sketch.output.err,
-        mash_file=rules.mash_dist.output.file,
-        genome_sizes=rules.genome_size.output
+        mash_file=rules.mash_dist.output.file
     output:
         file="cg-pipeline/{sample}.{raw_or_clean}.out.txt",
         log="logs/cg_pipeline/{sample}.{raw_or_clean}.log",
@@ -322,9 +337,9 @@ rule CG_pipeline:
         "docker://staphb/lyveset:2.0.1"
     shell:
         "date >> {output.log} ; " # time stamp, no version
+        "if [ ! -f \"logs/genome_sizes.txt\" ] ; then wget https://raw.githubusercontent.com/StaPH-B/UPHL/master/genome_sizes.txt ; mv genome_sizes.txt logs/. ; fi ; "
         "mash_result=($(head -n 1 {input.mash_file} | cut -f 1 | cut -f 8 -d \"-\" | sed 's/^_\(.*\)/\1/' | cut -f 1,2 -d \"_\" | cut -f 1 -d \".\" )) || true ; "
-#        "genome_length=$(grep $mash_result {input.genome_size} | cut -f 2 -d \":\" | awk '{{ print $0 * 1000000 }}' | cut -f 1 -d \".\" )"
-        "genome_length=$(grep $mash_result {input.genome_size} | cut -f 2 -d \":\" | awk '{{ print $0 * 1000000 }}' | cut -f 1 -d \".\" ) || genome_length=$(grep 'Estimated genome size:' {input.mash_error} | cut -f 4 -d \" \" ) || genome_length=\"0\" ; "
+        "genome_length=$(grep $mash_result logs/genome_sizes.txt | grep -v \"#\" | head -n 1 | cut -f 2 -d \":\" | awk '{{ print $0 \"e+06\" }}' ) || genome_length=$(grep 'Estimated genome size:' {input.mash_error} | cut -f 4 -d \" \" ) || genome_length=\"0\" ; "
         "echo \"The genome length for {wildcards.sample} is $genome_length\" >> {output.log} ; "
         "run_assembly_readMetrics.pl {input.shuffled_fastq} --fast --numcpus {threads} -e $genome_length 2>> {output.err} > {output.file} "
         "|| true ; touch {output}"

@@ -38,13 +38,11 @@ RESULTS=(
 "fastqc_raw_reads_2"
 "fastqc_clean_reads_PE1"
 "fastqc_clean_reads_PE2"
-"abricate_ecoh_O"
-"abricate_ecoh_H"
 "abricate_serotype_O"
 "abricate_serotype_H"
 "stxeae_result"
 )
-#ABRICATE_DATABASES=("argannot" "resfinder" "card" "plasmidfinder" "vfdb" "ecoli_vf" "ncbi" "ecoh" "serotypefinder")
+
 for database in serotypefinder ncbi
 do
   RESULTS=($(echo -e "${RESULTS[@]}\t$database" ))
@@ -113,10 +111,9 @@ do
   #########################################results_from_files
 
   # mash_results
-  if [ -n "$(find $out/mash -iname $sample*sorted.txt )" ]
+  if [ -n "$(find $out/mash -iname $sample*mashdist.txt )" ]
   then
-#    mash_results=($(cat $out/mash/$sample*sorted.txt | head -n 1 | cut -f 1 | cut -f 8 -d "-" | sed 's/^_\(.*\)/\1/' | cut -f 1,2,3,4 -d "_" | cut -f 1 -d "." | awk -F "_" '{ print $1 "\t" $2 "\t" $3 "\t" $4 }' ))
-    mash_results=($(cat $out/mash/$sample*sorted.txt | head -n 1 | cut -f 1 | cut -f 8 -d "-" | sed 's/^_\(.*\)/\1/' | cut -f 1,2,3,4 -d "_" | cut -f 1 -d "." | tr "_" " " ))
+    mash_results=($(cat $out/mash/$sample*mashdist.txt | head -n 1 | cut -f 1 | cut -f 8 -d "-" | sed 's/^_\(.*\)/\1/' | cut -f 1,2,3,4 -d "_" | cut -f 1 -d "." | tr "_" " " ))
     mash_result=$(echo "${mash_results[0]}""_""${mash_results[1]}""_""${mash_results[2]}""_""${mash_results[3]}")
     if [ -z "$mash_result" ]; then mash_result="no_result"; fi
     simple_mash_result=$(echo "${mash_results[0]}""_""${mash_results[1]}")
@@ -194,13 +191,6 @@ do
 
   if [ -n "$(echo $mash_result | grep "Escherichia_coli" )" ]
   then
-    O_group_ecoh=($(grep $pnusa $out/abricate_results/ecoh/ecoh.$sample.out.tab | awk '{ if ($10 > 80) print $0 }' | awk '{ if ($9 > 80) print $0 }' | cut -f 5 | awk -F "_" '{print $NF}' | awk -F "-" '{print $NF}' | sort | uniq | grep "O" | sed 's/\///g' ))
-    H_group_ecoh=($(grep $pnusa $out/abricate_results/ecoh/ecoh.$sample.out.tab | awk '{ if ($10 > 80) print $0 }' | awk '{ if ($9 > 80) print $0 }' | cut -f 5 | awk -F "_" '{print $NF}' | awk -F "-" '{print $NF}' | sort | uniq | grep "H" | sed 's/\///g' ))
-    abricate_ecoh_O=$(echo ${O_group_ecoh[@]} | tr ' ' '_' )
-    if [ -z "$abricate_ecoh_O" ]; then abricate_ecoh_O="none"; fi
-    abricate_ecoh_H=$(echo ${H_group_ecoh[@]} | tr ' ' '_' )
-    if [ -z "$abricate_ecoh_H" ]; then abricate_ecoh_H="none"; fi
-
     O_group_sero=($(grep $pnusa $out/abricate_results/serotypefinder/serotypefinder.$sample.out.tab | awk '{ if ($10 > 80) print $0 }' | awk '{ if ($9 > 80) print $0 }' | cut -f 5 | awk -F "_" '{print $NF}' | awk -F "-" '{print $NF}' | sort | uniq | grep "O" | sed 's/\///g' ))
     H_group_sero=($(grep $pnusa $out/abricate_results/serotypefinder/serotypefinder.$sample.out.tab | awk '{ if ($10 > 80) print $0 }' | awk '{ if ($9 > 80) print $0 }' | cut -f 5 | awk -F "_" '{print $NF}' | awk -F "-" '{print $NF}' | sort | uniq | grep "H" | sed 's/\///g' ))
     abricate_serotype_O=$(echo ${O_group_sero[@]} | tr ' ' '_' )
@@ -210,8 +200,6 @@ do
   else
     abricate_serotype_H="not_ecoli"
     abricate_serotype_O="not_ecoli"
-    abricate_ecoh_H="not_ecoli"
-    abricate_ecoh_O="not_ecoli"
   fi
 
   if [ -f "$out/abricate_results/vfdb/vfdb.$sample.out.tab" ]
@@ -221,7 +209,7 @@ do
     if [ -z "$stxeae_result" ]; then stxeae_result="not_found"; fi
   fi
 
-  results="$pnusa\t$sample\t$mash_result\t$simple_mash_result\t$seqsero_serotype\t$seqsero_profile\t$simple_seqsero_result\t$cg_cln_coverage\t$cg_raw_coverage\t$fastqc_raw_reads_1\t$fastqc_raw_reads_2\t$fastqc_clean_reads_PE1\t$fastqc_clean_reads_PE2\t$abricate_ecoh_O\t$abricate_ecoh_H\t$abricate_serotype_O\t$abricate_serotype_H\t$stxeae_result"
+  results="$pnusa\t$sample\t$mash_result\t$simple_mash_result\t$seqsero_serotype\t$seqsero_profile\t$simple_seqsero_result\t$cg_cln_coverage\t$cg_raw_coverage\t$fastqc_raw_reads_1\t$fastqc_raw_reads_2\t$fastqc_clean_reads_PE1\t$fastqc_clean_reads_PE2\t$abricate_serotype_O\t$abricate_serotype_H\t$stxeae_result"
   # abricate_results
   for database in argannot resfinder card plasmidfinder vfdb ecoli_vf ncbi
   do
@@ -253,11 +241,6 @@ echo "Abricate serotype results count"
 O_serotype_column=$(head -n 1 $out/run_results_summary.txt | tr "\t" "\n" | grep -n ^"abricate_serotype_O" | cut -f 1 -d ":" )
 H_serotype_column=$(head -n 1 $out/run_results_summary.txt | tr "\t" "\n" | grep -n ^"abricate_serotype_H" | cut -f 1 -d ":" )
 cut -f $O_serotype_column,$H_serotype_column $out/run_results_summary.txt | awk '{if(NR>1)print}' | sort | uniq -c |  sort -k 1 -n | grep -v "no_result" | grep -v "not_ecoli"
-
-echo "Abricate ecoh results count"
-O_ecoh_column=$(head -n 1 $out/run_results_summary.txt | tr "\t" "\n" | grep -n ^"abricate_ecoh_O" | cut -f 1 -d ":" )
-H_ecoh_column=$(head -n 1 $out/run_results_summary.txt | tr "\t" "\n" | grep -n ^"abricate_ecoh_H" | cut -f 1 -d ":" )
-cut -f $O_ecoh_column,$H_ecoh_column $out/run_results_summary.txt | awk '{if(NR>1)print}' | sort | uniq -c |  sort -k 1 -n | grep -v "no_result" | grep -v "not_ecoli"
 
 date
 echo "Finding each file for each sample complete!"

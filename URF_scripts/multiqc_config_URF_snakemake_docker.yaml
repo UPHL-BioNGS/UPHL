@@ -1,0 +1,208 @@
+custom_content:
+  order:
+    - mash_results
+    - mash_screen_results
+    - seqsero_results
+    - seqyclean_results
+    - CG-Pipeline
+    - raw_clean_scatter
+    - raw_clean_coverage
+    - summary_of_results
+    - summary_of_files
+    - snakemake_benchmarks
+    - file_heatmap
+custom_data:
+  abricate_ncbi:
+    id: 'abricate_ncbi'
+    section_name: 'Abricate Results: NCBI'
+    plot_type: 'heatmap'
+    format: 'csv'
+    pconfig:
+      id: 'abricate_ncbi'
+      title: 'Abricate Results: NCBI Bacterial Antimicrobial Resistance Reference Gene Database'
+      xTitle: 'Gene'
+      square: False
+      colstops: [ [0, '#FFFFFF'], [0.6, '#ffffe5'], [0.7, '#d9f0a3'], [0.95, '#004529'], [1, '#000000'], ]
+    sortRows: True
+  abricate_serotypefinder:
+    id: 'abricate_serotypefinder'
+    section_name: 'Abricate Results: serotypefinder'
+    plot_type: 'heatmap'
+    format: 'csv'
+    pconfig:
+      id: 'abricate_serotypefinder'
+      title: 'Abricate Results: SerotypeFinder'
+      xTitle: 'O or H group'
+      square: False
+      colstops: [ [0, '#FFFFFF'], [0.6, '#ffffe5'], [0.7, '#d9f0a3'], [0.95, '#004529'], [1, '#000000'], ]
+    sortRows: True
+  seqsero_results:
+    id: 'seqsero_results'
+    section_name: 'SeqSero serotyping results'
+    format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'seqsero_results'
+      namespace: 'SeqSero results'
+    headers:
+      Input_files:
+        hidden: True
+      O_antigen_prediction:
+        hidden: False
+      H1_antigen_prediction(fliC):
+        hidden: False
+      H2_antigen_prediction(fljB):
+        hidden: False
+      Predicted_antigenic_profile:
+        hidden: False
+      Predicted_serotype(s):
+        hidden: False
+  mash_results:
+    id: 'mash_results'
+    section_name: 'MASH Results'
+    plot_type: 'bargraph'
+    pconfig:
+      id: 'mash_results'
+      title: 'MASH results'
+      ylab: 'Organism counts'
+  summary_of_results:
+    id: 'summary_of_results'
+    section_name: 'Results Summary'
+    plot_type: 'table'
+    pconfig:
+      id: 'summary_of_results'
+      title: 'summary_of_results: Results'
+    headers:
+      pnusa:
+        hidden: False
+      sample:
+        hidden: True
+      mash_result:
+        hidden: True
+      A.simple_mash_result:
+        hidden: False
+      seqsero_serotype:
+        hidden: True
+      seqsero_profile:
+        hidden: True
+      B.simple_seqsero_result:
+        hidden: False
+      H.cg_cln_coverage:
+        hidden: False
+      G.cg_raw_coverage:
+        hidden: False
+      fastqc_raw_reads_1:
+        hidden: True
+      E.fastqc_raw_reads_2:
+        hidden: False
+      fastqc_clean_reads_PE1:
+        hidden: True
+      F.fastqc_clean_reads_PE2:
+        hidden: False
+      abricate_ecoh_O:
+        hidden: True
+      abricate_ecoh_H:
+        hidden: True
+      C.abricate_serotype_O:
+        hidden: False
+      D.abricate_serotype_H:
+        hidden: False
+      argannot:
+        hidden: True
+      resfinder:
+        hidden: True
+      card:
+        hidden: True
+      plasmidfinder:
+        hidden: True
+      vfdb:
+        hidden: True
+      ecoli_vf:
+        hidden: True
+      J.ncbi_antibiotic_resistence_genes:
+        hidden: False
+      I.stx_and_eae_virulence_factor_result:
+        hidden: False
+  raw_clean_scatter:
+    id: 'raw_clean_scatter'
+    section_name: 'Reads Comparison'
+    plot_type: 'scatter'
+    format: 'csv'
+    pconfig:
+      id: 'raw_clean_scatter'
+      title: 'Comparison of the number of reads from raw and clean fastq files'
+      xlab: 'Raw fastq reads'
+      ylab: 'Clean fastq reads'
+  raw_clean_coverage:
+    id: 'raw_clean_coverage'
+    section_name: 'Coverage Comparison'
+    plot_type: 'scatter'
+    pconfig:
+      id: 'raw_clean_coverage'
+      title: 'Comparison of the coverage in raw and clean fastq files'
+      xlab: 'Raw fastq coverage'
+      ylab: 'Clean fastq coverage'
+  file_heatmap:
+    id: 'file_heatmap'
+    section_name: 'Missing Files'
+    plot_type: 'heatmap'
+    format: 'csv'
+    pconfig:
+      id: 'file_heatmap'
+      title: 'Files Missing from Analysis'
+      colstops: [ [0, '#000000'], [0.5, '#810f7c'], [1, '#FFFFFF'], ]
+  CG-Pipeline:
+    id: 'CG-Pipeline'
+    section_name: 'CG-Pipeline Results'
+    plot_type: 'table'
+    pconfig:
+      id: 'CG-Pipeline'
+      title: 'CG-Pipeline Results'
+    headers:
+      File:
+        hidden: False
+      avgReadLength:
+        hidden: False
+      totalBases:
+        hidden: False
+      minReadLength:
+        hidden: False
+      maxReadLength:
+        hidden: False
+      avgQuality:numReads:
+        hidden: False
+      PE?:
+        hidden: True
+      coverage:
+        hidden: False
+      readScore:
+        hidden: True
+      medianFragmentLength:
+        hidden: True
+  snakemake_benchmarks:
+    id: 'snakemake_benchmarks'
+    section_name: 'snakemake benchmark timings (in seconds)'
+    plot_type: 'table'
+sp:
+  mash_results:
+    fn: 'mash_results.txt'
+  abricate_ncbi:
+    fn: 'ncbi.summary.csv'
+  abricate_serotypefinder:
+    fn: 'serotypefinder.summary.csv'
+  seqsero_results:
+    fn: 'Seqsero_serotype_results.txt'
+  seqyclean_results:
+    fn: 'seqyclean_summary.txt'
+  summary_of_results:
+    fn: 'run_results_summary.txt'
+  raw_clean_scatter:
+    fn: 'raw_clean_scatter.csv'
+  raw_clean_coverage:
+    fn: 'raw_clean_coverage.txt'
+  file_heatmap:
+    fn: 'File_heatmap.csv'
+  CG-Pipeline:
+    fn: 'cg-pipeline-summary.txt'
+  snakemake_benchmarks:
+    fn: 'benchmark_summary.csv'
