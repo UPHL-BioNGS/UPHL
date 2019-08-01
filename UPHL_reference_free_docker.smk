@@ -22,7 +22,7 @@ rule all:
     shell:
         "date >> logs/all/all.log ; " # time stamp
         "multiqc --version 2>> logs/all/all.err | tee -a logs/all/all.log ; "
-        "wget https://raw.githubusercontent.com/StaPH-B/UPHL/master/URF_scripts/multiqc_config_URF_snakemake.yaml 2>> logs/all/all.err | tee -a logs/all/all.log ; "
+        "wget https://raw.githubusercontent.com/StaPH-B/UPHL/master/URF_scripts/multiqc_config_URF_snakemake_docker.yaml 2>> logs/all/all.err | tee -a logs/all/all.log ; "
         "mv multiqc_config_URF_snakemake.yaml multiqc_config.yaml 2>> logs/all/all.err | tee -a logs/all/all.log ; "
         "multiqc -f --outdir {params.output_directory}/logs --cl_config \"prokka_fn_snames: True\" {params.output_directory}/results_for_multiqc 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
 
@@ -337,7 +337,7 @@ rule CG_pipeline:
         "docker://staphb/lyveset:2.0.1"
     shell:
         "date >> {output.log} ; " # time stamp, no version
-        "if [ ! -f \"logs/genome_sizes.txt\" ] ; then wget https://raw.githubusercontent.com/StaPH-B/UPHL/master/genome_sizes.txt ; mv genome_sizes.txt logs/. ; fi ; "
+        "if [ ! -f \"logs/genome_sizes.txt\" ] ; then wget https://raw.githubusercontent.com/StaPH-B/UPHL/master/URF_scripts/genome_sizes.txt ; mv genome_sizes.txt logs/. ; fi ; "
         "mash_result=($(head -n 1 {input.mash_file} | cut -f 1 | cut -f 8 -d \"-\" | sed 's/^_\(.*\)/\1/' | cut -f 1,2 -d \"_\" | cut -f 1 -d \".\" )) || true ; "
         "genome_length=$(grep $mash_result logs/genome_sizes.txt | grep -v \"#\" | head -n 1 | cut -f 2 -d \":\" | awk '{{ print $0 \"e+06\" }}' ) || genome_length=$(grep 'Estimated genome size:' {input.mash_error} | cut -f 4 -d \" \" ) || genome_length=\"0\" ; "
         "echo \"The genome length for {wildcards.sample} is $genome_length\" >> {output.log} ; "
