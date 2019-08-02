@@ -1,115 +1,99 @@
 #!/bin/bash
 out=$1
+SAMPLES=($(ls $out/Sequencing_reads/Raw/*fastq* | rev | cut -f 1 -d "/" | rev | cut -f 1 -d "_" | cut -f 1 -d "." | sort | uniq ))
 
+#find $out -type f -empty | grep -v final.txt | grep -v fastqc.complete
+#wc -l abricate_results*/*/*out.tab | awk '{ if ( $1 == 1 ) print $2 }' | parallel " rm $out/{} ; touch $out/{} "
+#grep -P "Predicted antigenic profile:\t-:-:-" SeqSero/*Seqsero_result.txt | cut -f 1 -d ":" | parallel " rm $out/{} ; touch $out/{} "
+
+# fastqc results
+FASTQC_RESULTS=()
 echo "sample,x,y" > $out/logs/raw_clean_scatter.csv
-echo "sample x y" > $out/logs/raw_clean_coverage.txt
-
-FILE_TEMPLATE=(
-"raw_fastq_files:Sequencing_reads/Raw:.f"
-"clean_fastq_files:Sequencing_reads/QCed:clean_*.fastq"
-"fastqc_files:fastqc:_fastqc."
-"mash_file:mash:_mashdist.txt"
-"shovill_file:ALL_assembled:_contigs.fa"
-"prokka_file:ALL_gff:.gff"
-"seqsero_file:SeqSero:.Seqsero_result.txt"
-"cg-pipeline_files:cg-pipeline:.out.txt"
-"quast_file:quast:report.txt"
-"abricate_all:abricate_results:.out.tab"
-)
-
-wc -l abricate_results*/*/*out.tab | awk '{ if ( $1 == 1 ) print $2 }' | parallel " rm $out/{} ; touch $out/{} "
-grep -P "Predicted antigenic profile:\t-:-:-" SeqSero/*Seqsero_result.txt | cut -f 1 -d ":" | parallel " rm $out/{} ; touch $out/{} "
-analysis_types=($(history -p ${FILE_TEMPLATE[@]} | cut -f 1 -d ":" ))
-echo "sample\t${analysis_types[@]}" | tr ' ' '\t' | parallel "echo -e {} > $out/run_file_summary.txt "
-file_summary_header=($(head -n 1 $out/run_file_summary.txt ))
-echo ${file_summary_header[@]} | tr ' ' ',' > $out/logs/File_heatmap.csv
-
-RESULTS=(
-"pnusa"
-"sample"
-"mash_result"
-"simple_mash_result"
-"seqsero_serotype"
-"seqsero_profile"
-"simple_seqsero_result"
-"cg_cln_coverage"
-"cg_raw_coverage"
-"fastqc_raw_reads_1"
-"fastqc_raw_reads_2"
-"fastqc_clean_reads_PE1"
-"fastqc_clean_reads_PE2"
-"abricate_serotype_O"
-"abricate_serotype_H"
-"stxeae_result"
-)
-
-for database in serotypefinder ncbi
-do
-  RESULTS=($(echo -e "${RESULTS[@]}\t$database" ))
-done
-echo ${RESULTS[@]} | tr ' ' '\t' | parallel " echo -e {} > $out/run_results_summary.txt "
-SAMPLES=($(ls $out/Sequencing_reads/Raw/*fastq* | sed 's!.*/!!' | cut -d "_" -f 1 | sort | uniq ))
 for sample in ${SAMPLES[@]}
 do
-  pnusa=$(echo $sample | sed 's/-UT.*//g' )
-  FILES=("sample:$sample")
-  for template in ${FILE_TEMPLATE[@]}
-  do
-    template_information=($(echo $template | awk -F ":" '{print $1 " " $2 " " $3}' ))
-    files=($(find $out/${template_information[1]} -wholename *$pnusa*${template_information[2]}* -size +0 -type f ))
-    if [ -n "${files[0]}" ]
-    then
-      file=$(echo ${files[@]} | tr ' ' ',' | tr '\t' ',' | tr '\n' ',' )
-    else
-      file="not_found,"
-    fi
-    FILES=("$(echo -e "${FILES[@]}\t${template_information[0]}:$file" )")
-  done
+  if [ -n "$(find fastqc -iname $sample*zip | grep -v shuffled | grep -v clean )" ]
+  then
+    file_raw1=$(ls fastqc/$sample*zip | grep -v "clean" | rev | cut -f 1 -d "/" | rev | head -n 1)
+    file_raw2=$(ls fastqc/$sample*zip | grep -v "clean" | rev | cut -f 1 -d "/" | rev | tail -n 1)
+  else
+    file_raw1="not_found" ; file_raw2="not_found"
+  fi
 
-  #########################################heatmap_of_files and summary_of_files
+  if [ -n "$(find fastqc -iname $sample*zip | grep clean_PE1 )" ]
+  then
+    file_cln1=$(ls fastqc/$sample*zip | grep "clean_PE1" | rev | cut -f 1 -d "/" | rev | head -n 1)
+    file_cln2=$(ls fastqc/$sample*zip | grep "clean_PE2" | rev | cut -f 1 -d "/" | rev | tail -n 1)
+  else
+    file_cln1="not_found" ; file_cln2="not_found"
+  fi
 
-  file_summary=""
-  file_heatmap=""
-  for column in ${file_summary_header[@]}
-  do
-    file=$(history -p ${FILES[@]} | sort | uniq | awk -F ":" -v analysis=$column '{ if ($1==analysis) print $2}' | tr '\n' ' ' )
-    if [ -z "$file_summary" ]
-    then
-      file_summary="$file"
-    else
-      file_summary="$(echo -e "$file_summary\t$file" )"
-    fi
+  if [ -s "fastqc/$file_raw1" ]
+  then
+    fastqc_summry=$(unzip -l fastqc/$file_raw1 | grep fastqc_data.txt | awk '{ print $4 }' )
+    result_raw1=$(unzip -p fastqc/$file_raw1 $fastqc_summry | grep "Total Sequences" | awk '{ print $3 }' )
+  else
+    file_raw1="not_found"
+    result_raw1="not_found"
+  fi
+  if [ -s "fastqc/$file_raw2" ]
+  then
+    fastqc_summry=$(unzip -l fastqc/$file_raw2 | grep fastqc_data.txt | awk '{ print $4 }' )
+    result_raw2=$(unzip -p fastqc/$file_raw2 $fastqc_summry | grep "Total Sequences" | awk '{ print $3 }' )
+  else
+    file_raw2="not_found"
+    result_raw2="not_found"
+  fi
+  if [ -s "fastqc/$file_cln1" ]
+  then
+    fastqc_summry=$(unzip -l fastqc/$file_cln1 | grep fastqc_data.txt | awk '{ print $4 }' )
+    result_cln1=$(unzip -p fastqc/$file_cln1 $fastqc_summry | grep "Total Sequences" | awk '{ print $3 }' )
+  else
+    file_cln1="not_found"
+    result_cln1="not_found"
+  fi
+  if [ -s "fastqc/$file_cln2" ]
+  then
+    fastqc_summry=$(unzip -l fastqc/$file_cln2 | grep fastqc_data.txt | awk '{ print $4 }' )
+    result_cln2=$(unzip -p fastqc/$file_cln2 $fastqc_summry | grep "Total Sequences" | awk '{ print $3 }' )
+  else
+    file_cln2="not_found"
+    result_cln2="not_found"
+  fi
+  echo "$sample,$result_raw2,$result_cln2" >> $out/logs/raw_clean_scatter.csv
+  FASTQC_RESULTS=(${FASTQC_RESULTS[@]} "$sample:$result_raw2:$result_cln2")
+done
+#echo ${FASTQC_RESULTS[@]}
 
-    if [ -z "$file_heatmap" ]
-    then
-      file_heatmap="$file"
-    else
-      if [ -z "$file" ]
-      then
-        file_heatmap="$file_heatmap,0"
-      elif [ -n "$(echo $file | grep not_ecoli )" ]
-      then
-        file_heatmap="$file_heatmap,0.5"
-      elif [ -n "$(echo $file | grep not_salmonella )" ]
-      then
-        file_heatmap="$file_heatmap,0.5"
-      elif [ -n "$(echo $file | grep not_found )" ]
-      then
-        file_heatmap="$file_heatmap,0"
-      elif [ -n "$(echo $file | grep no_result )" ]
-      then
-        file_heatmap="$file_heatmap,0.5"
-      else
-        file_heatmap="$file_heatmap,1"
-      fi
-    fi
-  done
+# cg-pipeline results
+CGPIPELINE_RESULTS=()
+echo "sample x y" > $out/logs/raw_clean_coverage.txt
+for sample in ${SAMPLES[@]}
+do
+  if [ -f "cg-pipeline/$sample.raw.out.txt" ]
+  then
+    cg_raw_coverage=$(grep "raw_shuffled" cg-pipeline/$sample.raw.out.txt | head -n 1 | awk '{print $9 }' )
+    if [ -z "$cg_raw_coverage" ]; then cg_raw_coverage="no_result"; fi
+  else
+    cg_raw_coverage="no_result"
+  fi
+  if [ -f "cg-pipeline/$sample.clean.out.txt" ]
+  then
+    cg_cln_coverage=$(grep "clean_shuffled" cg-pipeline/$sample.clean.out.txt | head -n 1 | awk '{print $9 }' )
+    if [ -z "$cg_cln_coverage" ]; then cg_cln_coverage="no_result"; fi
+  else
+    cg_cln_coverage="no_result"
+  fi
+  echo "$sample $cg_raw_coverage $cg_cln_coverage" >> $out/logs/raw_clean_coverage.txt
+  CGPIPELINE_RESULTS=(${CGPIPELINE_RESULTS[@]} "$sample:$cg_raw_coverage:$cg_cln_coverage")
+done
+#echo ${CGPIPELINE_RESULTS[@]}
 
-  echo "$file_heatmap" | sed 's/,,/,/g' >> $out/logs/File_heatmap.csv
-  echo "$file_summary" | sed 's/,,/,/g' >> $out/run_file_summary.txt
-
-  #########################################results_from_files
-
+# mash results, seqsero results, and abricate serotype results
+MASH_RESULTS=()
+SEQSERO_RESULTS=()
+SERO_ABRICATE_RESULTS=()
+for sample in ${SAMPLES[@]}
+do
   # mash_results
   if [ -n "$(find $out/mash -iname $sample*mashdist.txt )" ]
   then
@@ -122,8 +106,8 @@ do
     mash_result="no_result"
     simple_mash_result="no_result"
   fi
-
-  # seqsero_results
+  MASH_RESULTS=(${MASH_RESULTS[@]} "$sample:$mash_result:$simple_mash_result")
+  # seqsero results
   if [ -n "$(echo $mash_result | grep "Salmonella_enterica" )" ]
   then
     if [ -n "$(find $out/SeqSero -iname $sample*Seqsero_result.txt )" ]
@@ -132,7 +116,7 @@ do
       if [ -z "$seqsero_serotype" ]; then seqsero_serotype="no_result"; fi
       seqsero_profile=$(grep "Predicted antigenic profile" $out/SeqSero/$sample.Seqsero_result.txt | cut -f 2 | tr ' ' '_' )
       if [ -z "$seqsero_profile" ]; then seqsero_profile="no_result"; fi
-      simple_seqsero_result=$(echo $seqsero_serotype | perl -pe 's/[^\w.-]+//g' | sed 's/potentialmonophasicvariantof//g' | sed 's/potential_monophasic_variant_of_//g' | sed 's/O5-//g' )
+      simple_seqsero_result=$(echo $seqsero_serotype | sed 's/potentialmonophasicvariantof//g' | sed 's/potential_monophasic_variant_of_//g' | sed 's/O5-//g' )
       if [ -z "$simple_seqsero_result" ]; then simple_seqsero_result="no_result"; fi
     else
       seqsero_serotype="no_result"
@@ -144,90 +128,185 @@ do
     seqsero_profile="not_salmonella"
     simple_seqsero_result="not_salmonella"
   fi
+  echo "0 $sample: 1 $seqsero_serotype: 2 $seqsero_profile: 3 $simple_seqsero_result"
+  SEQSERO_RESULTS=(${SEQSERO_RESULTS[@]} "$sample;$seqsero_serotype;$seqsero_profile;$simple_seqsero_result")
 
-  # cg-pipeline_results
-  if [ -f "$out/cg-pipeline/$sample.raw.out.txt" ]
-  then
-    cg_raw_coverage=$(grep "raw_shuffled" $out/cg-pipeline/$sample.raw.out.txt | grep "$pnusa" | head -n 1 | awk '{print $9 }' )
-    if [ -z "$cg_raw_coverage" ]; then cg_raw_coverage="no_result"; fi
-  else
-    cg_raw_coverage="no_result"
-  fi
-  if [ -f "$out/cg-pipeline/$sample.clean.out.txt" ]
-  then
-    cg_cln_coverage=$(grep "clean_shuffled" $out/cg-pipeline/$sample.clean.out.txt | grep "$pnusa" | head -n 1 | awk '{print $9 }' )
-    if [ -z "$cg_cln_coverage" ]; then cg_cln_coverage="no_result"; fi
-  else
-    cg_cln_coverage="no_result"
-  fi
-
-  # fastqc_results
-  FASTQC_RESULTS=()
-  if [ -n "$(find $out/fastqc -iname $sample*zip )" ]
-  then
-    fastqc_files=(ls $out/fastqc/$sample*zip)
-    for fastqc_file in ${fastqc_files[@]}
-    do
-      if [ -f "$fastqc_file" ]
-      then
-        fastqc_summry=$(unzip -l $fastqc_file | grep fastqc_data.txt | awk '{ print $4 }' )
-        fastqc_result=$(unzip -p $fastqc_file $fastqc_summry | grep "Total Sequences" | awk '{ print $3 }' )
-        if [ -z "$fastqc_result" ]; then fastqc_result="not_found"; fi
-        FASTQC_RESULTS=($(echo -e "${FASTQC_RESULTS[@]}\t$fastqc_file:$fastqc_result" ))
-      else
-        FASTQC_RESULTS=($(echo -e "${FASTQC_RESULTS[@]}\t$fastqc_file:no_result" ))
-      fi
-    done
-    fastqc_raw_reads_1=$(history -p ${FASTQC_RESULTS[@]} | grep $sample | grep -v "shuffled" | grep -v "clean" | grep -v "ls:no_result" | cut -f 2 -d ":" | head -n 1 )
-    fastqc_raw_reads_2=$(history -p ${FASTQC_RESULTS[@]} | grep $sample | grep -v "shuffled" | grep -v "clean" | grep -v "ls:no_result" | cut -f 2 -d ":" | tail -n 1 )
-    fastqc_clean_reads_PE1=$(history -p ${FASTQC_RESULTS[@]} | grep $sample | grep -v "shuffled" | grep "clean_PE1.fastq" | grep -v "ls:no_result" | cut -f 2 -d ":" )
-    fastqc_clean_reads_PE2=$(history -p ${FASTQC_RESULTS[@]} | grep $sample | grep -v "shuffled" | grep "clean_PE2.fastq" | grep -v "ls:no_result" | cut -f 2 -d ":" )
-  else
-    fastqc_raw_reads_1="no_result"
-    fastqc_raw_reads_2="no_result"
-    fastqc_clean_reads_PE1="no_result"
-    fastqc_clean_reads_PE2="no_result"
-  fi
-
+  # abricate SerotypeFinder
   if [ -n "$(echo $mash_result | grep "Escherichia_coli" )" ]
   then
-    O_group_sero=($(grep $pnusa $out/abricate_results/serotypefinder/serotypefinder.$sample.out.tab | awk '{ if ($10 > 80) print $0 }' | awk '{ if ($9 > 80) print $0 }' | cut -f 5 | awk -F "_" '{print $NF}' | awk -F "-" '{print $NF}' | sort | uniq | grep "O" | sed 's/\///g' ))
-    H_group_sero=($(grep $pnusa $out/abricate_results/serotypefinder/serotypefinder.$sample.out.tab | awk '{ if ($10 > 80) print $0 }' | awk '{ if ($9 > 80) print $0 }' | cut -f 5 | awk -F "_" '{print $NF}' | awk -F "-" '{print $NF}' | sort | uniq | grep "H" | sed 's/\///g' ))
-    abricate_serotype_O=$(echo ${O_group_sero[@]} | tr ' ' '_' )
-    if [ -z "$abricate_serotype_O" ]; then abricate_serotype_O="none"; fi
-    abricate_serotype_H=$(echo ${H_group_sero[@]} | tr ' ' '_' )
-    if [ -z "$abricate_serotype_H" ]; then abricate_serotype_H="none"; fi
+    if [ -f "$out/abricate_results/serotypefinder/serotypefinder.$sample.out.tab" ]
+    then
+      O_group_sero=($(grep $sample $out/abricate_results/serotypefinder/serotypefinder.$sample.out.tab | awk '{ if ($10 > 80) print $0 }' | awk '{ if ($9 > 80) print $0 }' | cut -f 5 | awk -F "_" '{print $NF}' | awk -F "-" '{print $NF}' | sort | uniq | grep "O" | sed 's/\///g' ))
+      H_group_sero=($(grep $sample $out/abricate_results/serotypefinder/serotypefinder.$sample.out.tab | awk '{ if ($10 > 80) print $0 }' | awk '{ if ($9 > 80) print $0 }' | cut -f 5 | awk -F "_" '{print $NF}' | awk -F "-" '{print $NF}' | sort | uniq | grep "H" | sed 's/\///g' ))
+      abricate_serotype_O=$(echo ${O_group_sero[@]} | tr ' ' '_' )
+      if [ -z "$abricate_serotype_O" ]; then abricate_serotype_O="none"; fi
+      abricate_serotype_H=$(echo ${H_group_sero[@]} | tr ' ' '_' )
+      if [ -z "$abricate_serotype_H" ]; then abricate_serotype_H="none"; fi
+    else
+      abricate_serotype_H="not_ecoli"
+      abricate_serotype_O="not_ecoli"
+    fi
   else
     abricate_serotype_H="not_ecoli"
     abricate_serotype_O="not_ecoli"
   fi
+  SERO_ABRICATE_RESULTS=(${SERO_ABRICATE_RESULTS[@]} "$sample:$abricate_serotype_O:$abricate_serotype_H")
+done
+#echo ${MASH_RESULTS[@]}
+#echo ${SEQSERO_RESULTS[@]}
+#echo ${SERO_ABRICATE_RESULTS[@]}
 
+#abricate results : ncbi database
+NCBI_ABRICATE_RESULTS=()
+for sample in ${SAMPLES[@]}
+do
+  if [ -f "$out/abricate_results/ncbi/ncbi.$sample.out.tab" ]
+  then
+    abricate_results=($(grep $sample $out/abricate_results/ncbi/ncbi.$sample.out.tab | awk '{ if ($10 > 80) print $0 }' | awk '{ if ($9 > 80) print $0 }' | cut -f 5 | sort | uniq | sed 's/[0]//g' ))
+    abricate_result=$(echo ${abricate_results[@]} | tr ' ' '_' )
+    if [ -z "$abricate_result" ]; then abricate_result="not_found"; fi
+  else
+    abricate_result="no_result"
+  fi
+  NCBI_ABRICATE_RESULTS=(${NCBI_ABRICATE_RESULTS[@]} "$sample:$abricate_result")
+done
+#echo ${NCBI_ABRICATE_RESULTS[@]}
+
+STX_ABRICATE_RESULTS=()
+for sample in ${SAMPLES[@]}
+do
   if [ -f "$out/abricate_results/vfdb/vfdb.$sample.out.tab" ]
   then
-    stxeae_results=($(grep $pnusa $out/abricate_results/vfdb/vfdb.$sample.out.tab | grep -e "stx" -e "eae" | awk '{ if ($10 > 80) print $0 }' | awk '{ if ($9 > 80) print $0 }' | cut -f 5 | sort | uniq | sed 's/[0]//g' ))
+    stxeae_results=($(grep $sample $out/abricate_results/vfdb/vfdb.$sample.out.tab | grep -e "stx" -e "eae" | awk '{ if ($10 > 80) print $0 }' | awk '{ if ($9 > 80) print $0 }' | cut -f 5 | sort | uniq | sed 's/[0]//g' ))
     stxeae_result=$(echo ${stxeae_results[@]} | tr ' ' '_' )
     if [ -z "$stxeae_result" ]; then stxeae_result="not_found"; fi
+  else
+    stxeae_result="not_found"
   fi
-
-  results="$pnusa\t$sample\t$mash_result\t$simple_mash_result\t$seqsero_serotype\t$seqsero_profile\t$simple_seqsero_result\t$cg_cln_coverage\t$cg_raw_coverage\t$fastqc_raw_reads_1\t$fastqc_raw_reads_2\t$fastqc_clean_reads_PE1\t$fastqc_clean_reads_PE2\t$abricate_serotype_O\t$abricate_serotype_H\t$stxeae_result"
-  # abricate_results
-  for database in argannot resfinder card plasmidfinder vfdb ecoli_vf ncbi
-  do
-    if [ -f "$out/abricate_results/$database/$database.$sample.out.tab" ]
-    then
-      abricate_results=($(grep $sample $out/abricate_results/$database/$database.$sample.out.tab | awk '{ if ($10 > 80) print $0 }' | awk '{ if ($9 > 80) print $0 }' | cut -f 5 | sort | uniq | sed 's/[0]//g' ))
-      abricate_result=$(echo ${abricate_results[@]} | tr ' ' '_' )
-      if [ -z "$abricate_result" ]; then abricate_result="not_found"; fi
-      results="$results\t$abricate_result"
-    else
-      results="$results\tno_result"
-    fi
-  done
-  echo -e $results >> $out/run_results_summary.txt
-  echo "$sample,$fastqc_raw_reads_2,$fastqc_clean_reads_PE2" | sed 's/no_result/0/g' >> $out/logs/raw_clean_scatter.csv
-  echo "$sample $cg_raw_coverage $cg_cln_coverage" | sed 's/no_result/0/g' >> $out/logs/raw_clean_coverage.txt
+  STX_ABRICATE_RESULTS=(${STX_ABRICATE_RESULTS[@]} "$sample:$stxeae_result")
 done
-echo "Results for $out"
+#echo ${STX_ABRICATE_RESULTS[@]}
+
+# creating a heatmap for the files for easy visualization
+echo "sample,fastqc,seqyclean,cg-pipeline,mash,shovill,prokka,quast,seqsero,abricate:serotypefinder,abricate:ncbi" > "$out/logs/File_heatmap.csv"
+for sample in ${SAMPLES[@]}
+do
+  sample=$sample # woot! A useless line
+  fastqc_check=($(history -p ${FASTQC_RESULTS[@]} | sort | uniq | grep $sample | cut -f 2,3 -d ":" | tr ":" " " ))
+  if [ "$fastq_check[0]" == "not_found" ]
+  then
+    fastqc_file="0"
+  else
+    fastqc_file="1"
+  fi
+  if [ "$fastq_check[1]" == "not_found" ]
+  then
+    seqyclean_file="0"
+  else
+    seqyclean_file="1"
+  fi
+  cg_check=$(history -p ${CGPIPELINE_RESULTS[@]} | sort | uniq | grep $sample | grep -v "not_found" | head -n 1 )
+  if [ -z "$cg_check" ]
+  then
+    cg_file="0"
+  else
+    cg_file="1"
+  fi
+  mash_check=$(history -p ${MASH_RESULTS[@]} | sort | uniq | grep $sample | grep -v "not_found" | head -n 1 )
+  if [ -z "$mash_check" ]
+  then
+    mash_file="0"
+  else
+    mash_file="1"
+  fi
+  if [ -s "shovill_result/$sample/contigs.fa" ]
+  then
+    shovill_file="1"
+  else
+    shovill_file="0"
+  fi
+  if [ -s "Prokka/$sample/$sample.gff" ]
+  then
+    prokka_file="1"
+  else
+    prokka_file="0"
+  fi
+  if [ -s "quast/$sample/report.tsv" ]
+  then
+    quast_file="1"
+  else
+    quast_file="0"
+  fi
+  if [ -s "SeqSero/$sample/Seqsero_result.txt" ]
+  then
+    seqsero_file="1"
+  else
+    seqsero_file="0"
+  fi
+  sero_check=$(history -p ${SERO_ABRICATE_RESULTS[@]} | sort | uniq | grep $sample | grep -v "not_found" | grep -v "not_ecoli" | head -n 1 )
+  if [ -z "$sero_check" ]
+  then
+    serotypefinder_file="0"
+  else
+    serotypefinder_file="1"
+  fi
+  ncbi_check=$(history -p ${NCBI_ABRICATE_RESULTS[@]} | sort | uniq | grep $sample | grep -v "not_found" | head -n 1 )
+  if [ -z "$ncbi_check" ]
+  then
+    ncbi_file="0"
+  else
+    ncbi_file="1"
+  fi
+  stx_check=$(history -p ${STX_ABRICATE_RESULTS[@]} | sort | uniq | grep $sample | grep -v "not_found" | head -n 1 )
+  if [ -z "$stx_check" ]
+  then
+    stx_file="0"
+  else
+    stx_file="1"
+  fi
+  echo $heatmap_line >> "$out/logs/File_heatmap.csv"
+  echo "$sample,$fastqc_file,$seqyclean_file,$cg_file,$mash_file,$shovill_file,$prokka_file,$quast_file,$seqsero_file,$serotypefinder_file,$ncbi_file" >> $out/logs/File_heatmap.csv
+done
+
+# Getting all the results in one file
+echo "sample_id,sample,mash_result,simple_mash_result,seqsero_serotype,seqsero_profile,simple_seqsero_result,cg_cln_coverage,cg_raw_coverage,fastqc_raw_reads_1,fastqc_raw_reads_2,fastqc_clean_reads_PE1,fastqc_clean_reads_PE2,abricate_ecoh_O,abricate_ecoh_H,abricate_serotype_O,abricate_serotype_H,stxeae_result,argannot,resfinder,card,plasmidfinder,vfdb,ecoli_vf,ncbi" > run_results.csv
+for sample in ${SAMPLES[@]}
+do
+  sample_id=$(echo $sample | cut -f 1 -d "-" )
+  sample=$sample # woot! A useless line
+  mash_result_split=($(history -p ${MASH_RESULTS[@]} | sort | uniq | grep $sample | tr ':' ' ' ))
+  mash_result=${mash_result_split[1]}
+  simple_mash_result=${mash_result_split[2]}
+  seqsero_result_split=($(history -p ${SEQSERO_RESULTS[@]} | sort | uniq | grep $sample | tr ';' ' ' ))
+  seqsero_serotype=${seqsero_result_split[1]}
+  seqsero_profile=$(echo ${seqsero_result_split[2]} | tr ',' ';' )
+  echo "should be new version"
+  simple_seqsero_result=${seqsero_result_split[3]}
+  cg_result_split=($(history -p ${CGPIPELINE_RESULTS[@]} | sort | uniq | grep $sample | tr ':' ' ' ))
+  cg_cln_coverage=${cg_result_split[1]}
+  cg_raw_coverage=${cg_result_split[2]}
+  fastqc_result_split=($(history -p ${FASTQC_RESULTS[@]} | sort | uniq | grep $sample | tr ':' ' ' ))
+  fastqc_raw_reads_1=${fastqc_result_split[1]}
+  fastqc_raw_reads_2=${fastqc_result_split[1]}
+  fastqc_clean_reads_PE1=${fastqc_result_split[2]}
+  fastqc_clean_reads_PE2=${fastqc_result_split[2]}
+  abricate_ecoh_O="X"
+  abricate_ecoh_H="X"
+  sero_result_split=($(history -p ${SERO_ABRICATE_RESULTS[@]} | sort | uniq | grep $sample | tr ':' ' ' ))
+  abricate_serotype_O=${sero_result_split[1]}
+  abricate_serotype_H=${sero_result_split[2]}
+  stxeae_result="X"
+  argannot="X"
+  resfinder="X"
+  card="X"
+  plasmidfinder="X"
+  vfdb="X"
+  stx_result_split=($(history -p ${STX_ABRICATE_RESULTS[@]} | sort | uniq | grep $sample | tr ':' ' ' ))
+  ecoli_vf=${stx_result_split[1]}
+  ncbi_result_split=($(history -p ${NCBI_ABRICATE_RESULTS[@]} | sort | uniq | grep $sample | tr ':' ' ' ))
+  ncbi=${ncbi_result_split[1]}
+  echo "$sample_id,$sample,$mash_result,$simple_mash_result,$seqsero_serotype,$seqsero_profile,$simple_seqsero_result,$cg_cln_coverage,$cg_raw_coverage,$fastqc_raw_reads_1,$fastqc_raw_reads_2,$fastqc_clean_reads_PE1,$fastqc_clean_reads_PE2,$abricate_ecoh_O,$abricate_ecoh_H,$abricate_serotype_O,$abricate_serotype_H,$stxeae_result,$argannot,$resfinder,$card,$plasmidfinder,$vfdb,$ecoli_vf,$ncbi" >> run_results.csv
+done
 
 echo "Mash results count"
 mash_column=$(head -n 1 $out/run_results_summary.txt | tr "\t" "\n" | grep -n ^"simple_mash_result" | cut -f 1 -d ":" )

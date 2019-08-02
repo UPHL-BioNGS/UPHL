@@ -8,7 +8,6 @@ custom_content:
     - raw_clean_scatter
     - raw_clean_coverage
     - summary_of_results
-    - summary_of_files
     - snakemake_benchmarks
     - file_heatmap
 custom_data:

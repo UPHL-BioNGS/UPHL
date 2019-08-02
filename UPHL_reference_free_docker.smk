@@ -9,24 +9,9 @@ base_directory=workflow.basedir + "/URF_scripts"
 output_directory=os.getcwd()
 
 SAMPLE, MIDDLE, EXTENSION = glob_wildcards('Sequencing_reads/Raw/{sample, [^_]+}_{middle}.f{extension}')
-DATABASE = [ 'ncbi', 'serotypefinder' ]
+DATABASE = [ 'ncbi', 'serotypefinder', 'vfdb' ]
 
 rule all:
-    input:
-        "logs/final.txt"
-    singularity:
-        "docker://ewels/multiqc:1.7"
-    params:
-        output_directory=output_directory,
-        base_directory=base_directory
-    shell:
-        "date >> logs/all/all.log ; " # time stamp
-        "multiqc --version 2>> logs/all/all.err | tee -a logs/all/all.log ; "
-        "wget https://raw.githubusercontent.com/StaPH-B/UPHL/master/URF_scripts/multiqc_config_URF_snakemake_docker.yaml 2>> logs/all/all.err | tee -a logs/all/all.log ; "
-        "mv multiqc_config_URF_snakemake.yaml multiqc_config.yaml 2>> logs/all/all.err | tee -a logs/all/all.log ; "
-        "multiqc -f --outdir {params.output_directory}/logs --cl_config \"prokka_fn_snames: True\" {params.output_directory}/results_for_multiqc 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
-
-rule moving:
     input:
         # copying files over
         expand("Sequencing_reads/Raw/{sample}_{middle}.f{extension}", zip, sample=SAMPLE, middle=MIDDLE, extension=EXTENSION),
@@ -45,7 +30,7 @@ rule moving:
         expand("Prokka/{sample}/{sample}.gff", sample=SAMPLE),
         expand("ALL_gff/{sample}.gff", sample=SAMPLE),
         # quast results
-        expand("quast/{sample}/report.txt", sample=SAMPLE),
+        expand("quast/{sample}/report.tsv", sample=SAMPLE),
         # seqsero results
         expand("SeqSero/{sample}.Seqsero_result.txt", sample=SAMPLE),
         "SeqSero/Seqsero_serotype_results.txt",
@@ -55,46 +40,19 @@ rule moving:
         # abricate results
         expand("abricate_results/{database}/{database}.{sample}.out.tab", sample=SAMPLE, database=DATABASE),
         expand("logs/abricate_results/{database}.summary.csv", database=DATABASE),
-    output:
-        "logs/final.txt"
+        # file summary
+        "results_for_multiqc/final.txt"
+#    singularity:
+#        "docker://ewels/multiqc:1.7"
     params:
         output_directory=output_directory,
         base_directory=base_directory
     shell:
-        # getting the results in the right places
-        "mkdir -p logs/all ; "
-        "mkdir -p results_for_multiqc ; "
-        "echo -e \"made it here!\n\" ; "
-        "{params.base_directory}/check_multiqc_docker.sh                      {params.output_directory}                            2>> logs/all/all.err | tee -a logs/all/all.log ; "
-        "echo -e \"made it here!a\n\" ; "
-        "ln -s {params.output_directory}/fastqc                               {params.output_directory}/results_for_multiqc/fastqc 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
-        "echo -e \"made it here!1\n\" ; "
-        "ln -s {params.output_directory}/Prokka*/*/*txt                       {params.output_directory}/results_for_multiqc/.      2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
-        "echo -e \"made it here!2\n\" ; "
-        "ln -s {params.output_directory}/SeqSero/Seqsero_serotype_results.txt {params.output_directory}/results_for_multiqc/.      2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
-        "echo -e \"made it here!3\n\" ; "
-        "ln -s {params.output_directory}/mash/mash_results.txt                {params.output_directory}/results_for_multiqc/.      2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
-        "echo -e \"made it here!4\n\" ; "
-        "ln -s {params.output_directory}/cg-pipeline/cg-pipeline-summary.txt  {params.output_directory}/results_for_multiqc/.      2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
-        "echo -e \"made it here!5\n\" ; "
-        "ln -s {params.output_directory}/logs/abricate_results/*.summary.csv  {params.output_directory}/results_for_multiqc/.      2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
-        "echo -e \"made it here!6\n\" ; "
-        "ln -s {params.output_directory}/quast                                {params.output_directory}/results_for_multiqc/.      2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
-        "echo -e \"made it here!7\n\" ; "
-        "ln -s {params.output_directory}/logs/File_heatmap.csv                {params.output_directory}/results_for_multiqc/.      2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
-        "echo -e \"made it here!8\n\" ; "
-        "ln -s {params.output_directory}/logs/raw_clean_coverage.txt          {params.output_directory}/results_for_multiqc/.      2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
-        "echo -e \"made it here!9\n\" ; "
-        "ln -s {params.output_directory}/logs/raw_clean_scatter.csv           {params.output_directory}/results_for_multiqc/.      2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
-        "echo -e \"made it here!10\n\" ; "
-        "ln -s {params.output_directory}/run_file_summary.txt                 {params.output_directory}/results_for_multiqc/.      2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
-        # formatting for multiqc
-        "cat run_results_summary.txt | sed 's/simple_mash_result/A.simple_mash_result/g' | sed 's/simple_seqsero_result/B.simple_seqsero_result/g' | "
-        "sed 's/abricate_serotype_O/C.abricate_serotype_O/g' | sed 's/abricate_serotype_H/D.abricate_serotype_H/g' | sed 's/fastqc_raw_reads_2/E.fastqc_raw_reads_2/g' | "
-        "sed 's/fastqc_clean_reads_PE2/F.fastqc_clean_reads_PE2/g' | sed 's/cg_raw_coverage/G.cg_raw_coverage/g' | sed 's/cg_cln_coverage/H.cg_cln_coverage/g' | "
-        "sed 's/ncbi/J.ncbi_antibiotic_resistence_genes/g' | sed 's/stxeae_result/I.stx_and_eae_virulence_factor_result/g' > results_for_multiqc/run_results_summary.txt || true ; "
-        "touch {output}"
-
+        "date >> logs/all/all.log ; " # time stamp
+        "multiqc --version >> logs/all/all.log ; "
+        "wget https://raw.githubusercontent.com/StaPH-B/UPHL/master/URF_scripts/multiqc_config_URF_snakemake_docker.yaml 2>> logs/all/all.err | tee -a logs/all/all.log ; "
+        "mv multiqc_config_URF_snakemake_docker.yaml multiqc_config.yaml ; "
+        "multiqc -f --outdir {params.output_directory}/logs --cl_config \"prokka_fn_snames: True\" {params.output_directory}/results_for_multiqc "#2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
 
 def get_read1(wildcards):
     read1=glob.glob("Sequencing_reads/Raw/" + wildcards.sample + "*_R1_001.fastq.gz") + glob.glob("Sequencing_reads/Raw/" + wildcards.sample + "_1.fastq")
@@ -272,9 +230,9 @@ rule prokka:
 
 rule quast:
     input:
-        rules.shovill.output.file
+        rules.shovill.output.final
     output:
-        file="quast/{sample}/report.txt",
+        file="quast/{sample}/report.tsv",
         log="logs/quast/{sample}.log",
         err="logs/quast/{sample}.err"
     threads:
@@ -286,7 +244,7 @@ rule quast:
         "quast.py --version >> {output.log} ; " # logging version
         "quast.py {input} --output-dir quast/{wildcards.sample} --threads {threads} "
         "2>> {output.err} | tee -a {output.log} "
-        "|| true ; touch {output} "
+        "|| true ; touch {output} ; "
 
 rule CG_pipeline_shuffle_raw:
     input:
@@ -467,3 +425,61 @@ rule abricate_multiqc:
         "sed 's/[.],/0,/g' | sed 's/,[.]/,0/g' | sed 's/,,/,/g' "
         "> {output.file} 2>> {output.err} "
         "|| true ; touch {output} "
+
+rule moving:
+    input:
+        # copying files over
+        expand("Sequencing_reads/Raw/{sample}_{middle}.f{extension}", zip, sample=SAMPLE, middle=MIDDLE, extension=EXTENSION),
+        # running seqyclean
+        expand("Sequencing_reads/QCed/{sample}_clean_PE1.fastq", sample=SAMPLE),
+        expand("Sequencing_reads/QCed/{sample}_clean_PE2.fastq", sample=SAMPLE),
+        # running FastQC
+        "fastqc/fastqc.complete",
+        # running shovill
+        expand("shovill_result/{sample}/contigs.fa", sample=SAMPLE),
+        expand("ALL_assembled/{sample}_contigs.fa", sample=SAMPLE),
+        # mash results
+        expand("mash/{sample}_mashdist.txt", sample=SAMPLE),
+        "mash/mash_results.txt",
+        # prokka results
+        expand("Prokka/{sample}/{sample}.gff", sample=SAMPLE),
+        expand("ALL_gff/{sample}.gff", sample=SAMPLE),
+        # quast results
+        expand("quast/{sample}/report.txt", sample=SAMPLE),
+        # seqsero results
+        expand("SeqSero/{sample}.Seqsero_result.txt", sample=SAMPLE),
+        "SeqSero/Seqsero_serotype_results.txt",
+        # cg-pipeline results
+        expand("cg-pipeline/{sample}.{raw_or_clean}.out.txt", sample=SAMPLE,raw_or_clean=['raw', 'clean']),
+        "cg-pipeline/cg-pipeline-summary.txt",
+        # abricate results
+        expand("abricate_results/{database}/{database}.{sample}.out.tab", sample=SAMPLE, database=DATABASE),
+        expand("logs/abricate_results/{database}.summary.csv", database=DATABASE),
+    output:
+        "logs/all/all.log",
+        "logs/all/all.err",
+        "results_for_multiqc/final.txt"
+    params:
+        output_directory=output_directory,
+        base_directory=base_directory
+    shell:
+        "date 2>> logs/all/all.err | tee -a logs/all/all.log ; " # time stamp
+        # getting the results in the right places
+        "{params.base_directory}/check_multiqc_docker.sh                      {params.output_directory}                       2>> logs/all/all.err | tee -a logs/all/all.log ; "
+        "ln -s {params.output_directory}/Prokka*/*/*txt                       {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
+        "ln -s {params.output_directory}/SeqSero/Seqsero_serotype_results.txt {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
+        "ln -s {params.output_directory}/mash/mash_results.txt                {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
+        "ln -s {params.output_directory}/cg-pipeline/cg-pipeline-summary.txt  {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
+        "ln -s {params.output_directory}/logs/abricate_results/*.summary.csv  {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
+        "ln -s {params.output_directory}/quast                                {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
+        "ln -s {params.output_directory}/logs/File_heatmap.csv                {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
+        "ln -s {params.output_directory}/logs/raw_clean_coverage.txt          {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
+        "ln -s {params.output_directory}/logs/raw_clean_scatter.csv           {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
+        "ln -s {params.output_directory}/run_file_summary.txt                 {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
+        "ln -s {params.output_directory}/fastqc                               {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
+        # formatting for multiqc
+        "cat run_results_summary.txt | sed 's/simple_mash_result/A.simple_mash_result/g' | sed 's/simple_seqsero_result/B.simple_seqsero_result/g' | "
+        "sed 's/abricate_serotype_O/C.abricate_serotype_O/g' | sed 's/abricate_serotype_H/D.abricate_serotype_H/g' | sed 's/fastqc_raw_reads_2/E.fastqc_raw_reads_2/g' | "
+        "sed 's/fastqc_clean_reads_PE2/F.fastqc_clean_reads_PE2/g' | sed 's/cg_raw_coverage/G.cg_raw_coverage/g' | sed 's/cg_cln_coverage/H.cg_cln_coverage/g' | "
+        "sed 's/ncbi/J.ncbi_antibiotic_resistence_genes/g' | sed 's/stxeae_result/I.stx_and_eae_virulence_factor_result/g' > results_for_multiqc/run_results_summary.txt || true ; "
+        "touch {output}"
