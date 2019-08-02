@@ -1,0 +1,69 @@
+# Elizabeth Cook Anderson
+# July 25, 2019, UPHL 
+# This code will clean up big result files from abricate and get them ready to run a BedTool test (it will transform the columns to three output columns: Chromosome Start End). Since it uses OS it is only for a linux platform.
+
+import sys
+import os
+
+## This edits abricate result files so they can be converted to BedFiles ##
+file = open("BedFile.txt", "w")
+CoverageMap = {} 
+TotalCoverage = {}
+with open(sys.argv[1], 'r') as f: 
+	first_line = f.readline()
+	for line in f:
+		column = line.split('\t')
+		if float(column[9]) > 85.0: # (Quality Control) %Identity in Column[9] has to be greater than 85%
+			file.write(column[4] + '\t')
+			removeTotalValue = column[5].split('/') #one of the columns here is in the format "start-finish/Total#ofBP". removeTotalValue removes the Total#ofBP at the end
+			CoverageMap[column[4]] = removeTotalValue[1] #This dictionary is used later to calculate % coverage
+			startAndEnd = removeTotalValue[0].split('-') 
+			file.write(startAndEnd[0])
+			file.write('\t')
+			file.write(startAndEnd[1])
+			file.write('\n')
+file.close()
+
+## BedTool commands executed on the command line ##
+os.system('sortBed -i BedFile.txt > BedfileSorted.bed')
+os.system('bedtools merge -i BedfileSorted.bed > Merged.bed')
+
+## Calculates the total number of bases in each plasmid; saves the final num to a dictionary ##
+file2 = open("Merged.bed", "r")
+for line in file2: 
+	column = line.split('\t')
+	sum = int(column[2]) - int(column[1])
+	if column[0] in TotalCoverage: #If this isn't the first instance of a plasmid, add the value just calculated to the old value
+		sum = sum + TotalCoverage[column[0]]
+		TotalCoverage[column[0]] = sum
+	else: 
+		TotalCoverage[column[0]] = sum #If this is the first instance of a plasmid, add it to our dictionary
+file2.close()
+		
+## Calculates the percent result for each plasmid ##
+file3 = open("FinalOutput.txt", "w")
+file3.write("PlasmidID" + '\t' + "Decimal (represents %) Coverage" +'\n')
+for key, value in TotalCoverage.items(): 
+	try:
+		CoverageMap[key] =  round((float(value) / float(CoverageMap[key])), 5)
+		if CoverageMap[key] >= .65: #(Quality Control) The coverage has to be greater than 65% to be a hit that we see
+			file3.write(key + '\t')
+			file3.write(str(CoverageMap[key]))
+			file3.write('\n')
+		else:
+			CoverageMap.pop(key) 
+	except ZeroDivisionError:
+		print("Error: Divided by Zero")
+file3.close()
+
+## Make an edited full abricate file ##
+file4 = open("EditedAbricateResults.txt","w")
+with open(sys.argv[1], 'r') as f: 
+	for line in f:
+		column = line.split('\t')
+		if column[4] in CoverageMap:
+			file4.write(line)
+file4.close()
+	
+## How to use this file to make a coverage graph ##
+# https://davetang.org/muse/2015/08/05/creating-a-coverage-plot-using-bedtools-and-r/
