@@ -19,39 +19,42 @@ rule all:
         expand("Sequencing_reads/QCed/{sample}_clean_PE1.fastq", sample=SAMPLE),
         expand("Sequencing_reads/QCed/{sample}_clean_PE2.fastq", sample=SAMPLE),
         # running FastQC
-        "fastqc/fastqc.complete",
+#        "fastqc/fastqc.complete",
         # running shovill
-        expand("shovill_result/{sample}/contigs.fa", sample=SAMPLE),
-        expand("ALL_assembled/{sample}_contigs.fa", sample=SAMPLE),
+#        expand("shovill_result/{sample}/contigs.fa", sample=SAMPLE),
+#        expand("ALL_assembled/{sample}_contigs.fa", sample=SAMPLE),
         # mash results
-        expand("mash/{sample}_mashdist.txt", sample=SAMPLE),
-        "mash/mash_results.txt",
+#        expand("mash/{sample}_mashdist.txt", sample=SAMPLE),
+#        "mash/mash_results.txt",
         # prokka results
-        expand("Prokka/{sample}/{sample}.gff", sample=SAMPLE),
-        expand("ALL_gff/{sample}.gff", sample=SAMPLE),
+#        expand("Prokka/{sample}/{sample}.gff", sample=SAMPLE),
+#        expand("ALL_gff/{sample}.gff", sample=SAMPLE),
         # quast results
-        expand("quast/{sample}/report.tsv", sample=SAMPLE),
+#        expand("quast/{sample}/report.tsv", sample=SAMPLE),
         # seqsero results
-        expand("SeqSero/{sample}.Seqsero_result.txt", sample=SAMPLE),
-        "SeqSero/Seqsero_serotype_results.txt",
+#        expand("SeqSero/{sample}.Seqsero_result.txt", sample=SAMPLE),
+#        "SeqSero/Seqsero_serotype_results.txt",
         # cg-pipeline results
-        expand("cg-pipeline/{sample}.{raw_or_clean}.out.txt", sample=SAMPLE,raw_or_clean=['raw', 'clean']),
-        "cg-pipeline/cg-pipeline-summary.txt",
+#        expand("cg-pipeline/{sample}.{raw_or_clean}.out.txt", sample=SAMPLE,raw_or_clean=['raw', 'clean']),
+#        "cg-pipeline/cg-pipeline-summary.txt",
         # abricate results
-        expand("abricate_results/{database}/{database}.{sample}.out.tab", sample=SAMPLE, database=DATABASE),
-        expand("logs/abricate_results/{database}.summary.csv", database=DATABASE),
+#        expand("abricate_results/{database}/{database}.{sample}.out.tab", sample=SAMPLE, database=DATABASE),
+#        expand("logs/abricate_results/{database}.summary.csv", database=DATABASE),
+        # blobtools results
+#        expand("blobtools/{sample}.blobDB.json", sample=SAMPLE),
+#        expand("blobtools/{sample}.blobDB.table.txt", sample=SAMPLE),
+#        expand("blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.bam0.png", sample=SAMPLE),
         # file summary
-        "results_for_multiqc/final.txt"
-#    singularity:
-#        "docker://ewels/multiqc:1.7"
+#        "results_for_multiqc/final.txt"
+    singularity:
+        "docker://ewels/multiqc:1.7"
     params:
         output_directory=output_directory,
         base_directory=base_directory
     shell:
         "date >> logs/all/all.log ; " # time stamp
         "multiqc --version >> logs/all/all.log ; "
-        "wget https://raw.githubusercontent.com/StaPH-B/UPHL/master/URF_scripts/multiqc_config_URF_snakemake_docker.yaml 2>> logs/all/all.err | tee -a logs/all/all.log ; "
-        "mv multiqc_config_URF_snakemake_docker.yaml multiqc_config.yaml ; "
+        "wget -nc https://raw.githubusercontent.com/StaPH-B/UPHL/master/URF_scripts/multiqc_config_URF_snakemake_docker.yaml -O multiqc_config.yaml 2>> logs/all/all.err | tee -a logs/all/all.log ; "
         "multiqc -f --outdir {params.output_directory}/logs --cl_config \"prokka_fn_snames: True\" {params.output_directory}/results_for_multiqc "#2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
 
 def get_read1(wildcards):
@@ -219,7 +222,7 @@ rule prokka:
         log="logs/prokka/{sample}.log",
         err="logs/prokka/{sample}.err"
     singularity:
-        "docker://staphb/prokka:1.13"
+        "docker://staphb/prokka:1.14"
     shell:
         "date >> {output.log} ; " # time stamp
         "prokka -v >> {output.log} ; " # logging version
@@ -295,7 +298,7 @@ rule CG_pipeline:
         "docker://staphb/lyveset:2.0.1"
     shell:
         "date >> {output.log} ; " # time stamp, no version
-        "if [ ! -f \"logs/genome_sizes.txt\" ] ; then wget https://raw.githubusercontent.com/StaPH-B/UPHL/master/URF_scripts/genome_sizes.txt ; mv genome_sizes.txt logs/. ; fi ; "
+        "wget -nc https://raw.githubusercontent.com/StaPH-B/UPHL/master/URF_scripts/genome_sizes.txt -O logs/genome_sizes.txt ; "
         "mash_result=($(head -n 1 {input.mash_file} | cut -f 1 | cut -f 8 -d \"-\" | sed 's/^_\(.*\)/\1/' | cut -f 1,2 -d \"_\" | cut -f 1 -d \".\" )) || true ; "
         "genome_length=$(grep $mash_result logs/genome_sizes.txt | grep -v \"#\" | head -n 1 | cut -f 2 -d \":\" | awk '{{ print $0 \"e+06\" }}' ) || genome_length=$(grep 'Estimated genome size:' {input.mash_error} | cut -f 4 -d \" \" ) || genome_length=\"0\" ; "
         "echo \"The genome length for {wildcards.sample} is $genome_length\" >> {output.log} ; "
@@ -426,7 +429,119 @@ rule abricate_multiqc:
         "> {output.file} 2>> {output.err} "
         "|| true ; touch {output} "
 
-rule moving:
+rule bwa_index:
+    input:
+        rules.shovill.output
+    output:
+        index="shovill_result/{sample}/contigs.fa.sa",
+        log="logs/bwa_index/{sample}.log",
+        err="logs/bwa_index/{sample}.err"
+    singularity:
+        "docker://staphb/bwa:0.7.17"
+    shell:
+        "date >> {output.log} ; " # time stamp
+        "echo \"bwa $(bwa 2>&1 | grep Version )\" >> {output.log} ; " # version of bwa
+        "bwa index {input} || true ; "
+        "touch {output}"
+
+rule bwa:
+    input:
+        contig=rules.shovill.output,
+        read1=rules.seqyclean.output.read1,
+        read2=rules.seqyclean.output.read2,
+        index=rules.bwa_index.output
+    threads:
+        48
+    output:
+        bam="bwa/{sample}.sorted.bam",
+        bai="bwa/{sample}.sorted.bam.bai",
+        log="logs/bwa/{sample}.log",
+        err="logs/bwa/{sample}.err"
+    singularity:
+        "docker://staphb/bwa:0.7.17"
+    shell:
+        "date >> {output.log} ; " # time stamp
+        "echo \"bwa $(bwa 2>&1 | grep Version )\" >> {output.log} ; " # version of bwa
+        "bwa mem -t {threads} {input.contig} {input.read1} {input.read2} | samtools sort -o {output.bam} || true ; "
+        "samtools index {output.bam} || true ; "
+        "touch {output}"
+
+rule blastn:
+    input:
+        rules.shovill.output
+    output:
+        tsv="blast/{sample}.tsv",
+        log="logs/blastn/{sample}.log",
+        err="logs/blastn/{sample}.err"
+    threads:
+        10
+    singularity:
+        "docker://ncbi/blast:2.9.0"
+    shell:
+        "date >> {output.log} ; " # time stamp
+        "blastn -version >> {output.log} ; " # version of blastn
+        "echo \"The blastdb location is $BLASTDB\" >> {output.log} ; "
+        "blastn -query {input} -out {output} -num_threads {threads} -db /blast/blastdb/nt -outfmt '6 qseqid staxids bitscore std' -max_target_seqs 10 -max_hsps 1 -evalue 1e-25 || true ; "
+        "touch {output}"
+
+rule blobtools_create:
+    input:
+        contig=rules.shovill.output,
+        blast=rules.blastn.output,
+        bam=rules.bwa.output.bam
+    output:
+        cov="blobtools/{sample}.{sample}.sorted.bam.cov",
+        json="blobtools/{sample}.blobDB.json",
+        log="logs/blobtools_create/{sample}.log",
+        err="logs/blobtools_create/{sample}.err"
+    threads:
+        1
+    singularity:
+        "docker://chrishah/blobtools:v1.1.1"
+    shell:
+        "date >> {output.log} ; " # time stamp
+        "echo \"blobtools version $(blobtools -v)\" >> {output.log} ; " # version of blobtools
+        "blobtools create -o blobtools/{wildcards.sample} -i {input.contig} -b {input.bam} -t {input.blast} || true ; "
+        "touch {output}"
+
+rule blobtools_view:
+    input:
+        rules.blobtools_create.output.json,
+    output:
+        txt="blobtools/{sample}.blobDB.table.txt",
+        log="logs/blobtools_view/{sample}.log",
+        err="logs/blobtools_view/{sample}.err"
+    threads:
+        1
+    singularity:
+        "docker://chrishah/blobtools:v1.1.1"
+    shell:
+        "date >> {output.log} ; " # time stamp
+        "echo \"blobtools version $(blobtools -v)\" >> {output.log} ; " # version of blobtools
+        "blobtools view -i {input} -o blobtools/ || true ; "
+        "touch {output}"
+
+rule blobtools_plot:
+    input:
+        table=rules.blobtools_view.output,
+        json=rules.blobtools_create.output.json
+    output:
+        png="blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.bam0.png",
+        covpng="blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.read_cov.bam0.png",
+        txt="blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.stats.txt",
+        log="logs/blobtools_plot/{sample}.log",
+        err="logs/blobtools_plot/{sample}.err"
+    threads:
+        1
+    singularity:
+        "docker://chrishah/blobtools:v1.1.1"
+    shell:
+        "date >> {output.log} ; " # time stamp
+        "echo \"blobtools version $(blobtools -v)\" >> {output.log} ; " # version of blobtools
+        "blobtools plot -i {input.json} -o blobtools/ -r species --format png || true ; "
+        "touch {output}"
+
+rule multiqc_prep:
     input:
         # copying files over
         expand("Sequencing_reads/Raw/{sample}_{middle}.f{extension}", zip, sample=SAMPLE, middle=MIDDLE, extension=EXTENSION),
@@ -445,7 +560,7 @@ rule moving:
         expand("Prokka/{sample}/{sample}.gff", sample=SAMPLE),
         expand("ALL_gff/{sample}.gff", sample=SAMPLE),
         # quast results
-        expand("quast/{sample}/report.txt", sample=SAMPLE),
+        expand("quast/{sample}/report.tsv", sample=SAMPLE),
         # seqsero results
         expand("SeqSero/{sample}.Seqsero_result.txt", sample=SAMPLE),
         "SeqSero/Seqsero_serotype_results.txt",

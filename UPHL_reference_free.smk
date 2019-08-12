@@ -3,7 +3,7 @@ import os
 import glob
 import shutil
 from os.path import join
-print("UPHL reference free pipeline v.2019.4.3")
+print("UPHL reference free pipeline v.2019.8.14")
 
 base_directory=workflow.basedir + "/URF_scripts"
 output_directory=os.getcwd()
@@ -11,7 +11,8 @@ seqyclean_adaptors="/home/Bioinformatics/Data/SeqyClean_data/PhiX_174_plus_Adapt
 mash_sketches="/home/Bioinformatics/Data/RefSeqSketchesDefaults.msh"
 
 SAMPLE, MIDDLE, EXTENSION = glob_wildcards('Sequencing_reads/Raw/{sample, [^_]+}_{middle}.f{extension}')
-DATABASE = ['argannot', 'bacmet2', 'card', 'ecoh', 'ecoli_vf', 'ncbi', 'plasmidfinder', 'vfdb', 'serotypefinder', 'cpd']
+DATABASE = ['ncbi', 'vfdb', 'serotypefinder']
+#DATABASE = ['argannot', 'bacmet2', 'card', 'ecoh', 'ecoli_vf', 'ncbi', 'plasmidfinder', 'vfdb', 'serotypefinder', 'cpd']
 
 rule all:
     input:
@@ -57,9 +58,9 @@ rule all:
         #blobtools
         expand("bwa/{sample}.sorted.bam", sample=SAMPLE),
         expand("blast/{sample}.tsv", sample=SAMPLE),
-        expand("blobtools/{sample}.blobDB.json", sample=SAMPLE),
-        expand("blobtools/{sample}.blobDB.table.txt", sample=SAMPLE),
-        expand("blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.bam0.png", sample=SAMPLE),
+#        expand("blobtools/{sample}.blobDB.json", sample=SAMPLE),
+#        expand("blobtools/{sample}.blobDB.table.txt", sample=SAMPLE),
+#        expand("blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.bam0.png", sample=SAMPLE),
     params:
         output_directory=output_directory,
         base_directory=base_directory
@@ -750,12 +751,9 @@ rule blobtools_create:
         json="blobtools/{sample}.blobDB.json"
     threads:
         1
-    conda:
-        "/home/eriny/anaconda3/envs/blobtools"
     shell:
-        "conda activate blobtools ; "
         "blobtools create -o blobtools/{wildcards.sample} -i {input.contig} -b {input.bam} -t {input.blast} || true ; "
-        "conda deactivate ; touch {output}"
+        "touch {output}"
 
 rule blobtools_view:
     input:
@@ -764,12 +762,9 @@ rule blobtools_view:
         "blobtools/{sample}.blobDB.table.txt"
     threads:
         1
-    conda:
-        "/home/eriny/anaconda3/envs/blobtools"
     shell:
-        "conda activate blobtools ; "
         "blobtools view -i {input} -o blobtools/ || true ; "
-        "conda deactivate ; touch {output}"
+        "touch {output}"
 
 rule blobtools_plot:
     input:
@@ -781,9 +776,6 @@ rule blobtools_plot:
         "blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.stats.txt"
     threads:
         1
-    conda:
-        "/home/eriny/anaconda3/envs/blobtools"
     shell:
-        "conda activate blobtools ; "
         "blobtools plot -i {input.json} -o blobtools/ -r species --format png || true ; "
-        "conda deactivate ; touch {output}"
+        "touch {output}"
