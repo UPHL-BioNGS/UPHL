@@ -753,7 +753,9 @@ rule blobtools_create:
     conda:
         "/home/eriny/anaconda3/envs/blobtools"
     shell:
-        "blobtools create -o blobtools/{wildcards.sample} -i {input.contig} -b {input.bam} -t {input.blast}"
+        "conda activate blobtools ; "
+        "blobtools create -o blobtools/{wildcards.sample} -i {input.contig} -b {input.bam} -t {input.blast} || true ; "
+        "conda deactivate ; touch {output}"
 
 rule blobtools_view:
     input:
@@ -765,7 +767,9 @@ rule blobtools_view:
     conda:
         "/home/eriny/anaconda3/envs/blobtools"
     shell:
-        "blobtools view -i {input} -o blobtools/"
+        "conda activate blobtools ; "
+        "blobtools view -i {input} -o blobtools/ || true ; "
+        "conda deactivate ; touch {output}"
 
 rule blobtools_plot:
     input:
@@ -780,4 +784,6 @@ rule blobtools_plot:
     conda:
         "/home/eriny/anaconda3/envs/blobtools"
     shell:
-        "blobtools plot -i {input.json} -o blobtools/ -r species --format png"
+        "conda activate blobtools ; "
+        "blobtools plot -i {input.json} -o blobtools/ -r species --format png || true ; "
+        "conda deactivate ; touch {output}"
