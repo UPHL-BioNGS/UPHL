@@ -44,6 +44,7 @@ rule all:
 #        expand("blobtools/{sample}.blobDB.json", sample=SAMPLE),
 #        expand("blobtools/{sample}.blobDB.table.txt", sample=SAMPLE),
 #        expand("blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.bam0.png", sample=SAMPLE),
+#"mash/mash_results.txt",
         # file summary
 #        "results_for_multiqc/final.txt"
     singularity:
@@ -541,6 +542,47 @@ rule blobtools_plot:
         "blobtools plot -i {input.json} -o blobtools/ -r species --format png || true ; "
         "touch {output}"
 
+rule blobtools_multiqc:
+    input:
+        expand("blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.stats.txt", sample=SAMPLE)
+    output:
+        file="blobtools/blobtools_results.txt",
+        log="logs/blobtools_multiqc/log.log",
+        err="logs/blobtools_multiqc/log.err"
+    threads:
+        1
+    shell:
+        "date >> {output.log} ; " # time stamp
+        "organisms=($(cut -f 1 blobtools/*blobplot.stats.txt | grep -v \"all\" | grep -v \"#\" | tr ' ' '_' | sort | uniq -c | sort -rhk 1,1 | awk '{{ print $2 }}' )) ; "
+        "echo \"The organisms found in this run: ${{organisms[@]}}\" >> {output.log} ; "
+        "header=\"Sample\" ; "
+        """
+        for organism in ${{organisms[@]}}
+        do
+            header=$(echo \"$header\\t$organism\" )
+        done
+        """
+        "echo -e \"$header\" > {output.file} ; "
+        "blobtools_results=($(ls blobtools/*blobplot.stats.txt | sed 's!.*/!!' | cut -d \"_\" -f 1 | cut -d '.' -f 1 | sort | uniq )) ; "
+        """
+        for blobtools_result in ${{blobtools_results[@]}}
+        do
+            blobtools_line=$blobtools_result
+            for organism in ${{organisms[@]}}
+            do
+                if [ -z \"$(cut -f 1 blobtools/$blobtools_result*blobplot.stats.txt | tr ' ' '_' | grep $organism | head -n 1 )\" ]
+                then
+                    number=\"0\"
+                else
+                    number=$(cat blobtools/$blobtools_result*blobplot.stats.txt | tr ' ' '_' | grep $organism | cut -f 3 | head -n 1 )
+                fi
+                blobtools_line=$(echo \"$blobtools_line\t$number\" )
+            done
+            echo -e \"$blobtools_line\" >> blobtools/blobtools_results.txt
+        done
+        """
+        "touch {output} "
+
 rule multiqc_prep:
     input:
         # copying files over
@@ -570,6 +612,11 @@ rule multiqc_prep:
         # abricate results
         expand("abricate_results/{database}/{database}.{sample}.out.tab", sample=SAMPLE, database=DATABASE),
         expand("logs/abricate_results/{database}.summary.csv", database=DATABASE),
+        # blobtools results
+        expand("blobtools/{sample}.blobDB.json", sample=SAMPLE),
+        expand("blobtools/{sample}.blobDB.table.txt", sample=SAMPLE),
+        expand("blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.bam0.png", sample=SAMPLE),
+        "blobtools/blobtools_results.txt",
     output:
         "logs/all/all.log",
         "logs/all/all.err",
@@ -584,6 +631,7 @@ rule multiqc_prep:
         "ln -s {params.output_directory}/Prokka*/*/*txt                       {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
         "ln -s {params.output_directory}/SeqSero/Seqsero_serotype_results.txt {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
         "ln -s {params.output_directory}/mash/mash_results.txt                {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
+        "ln -s {params.output_directory}/blobtools/blobtools_results.txt      {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
         "ln -s {params.output_directory}/cg-pipeline/cg-pipeline-summary.txt  {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
         "ln -s {params.output_directory}/logs/abricate_results/*.summary.csv  {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
         "ln -s {params.output_directory}/quast                                {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
