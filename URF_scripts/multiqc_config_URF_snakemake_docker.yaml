@@ -1,9 +1,10 @@
 custom_content:
   order:
     - mash_results
-    - mash_screen_results
+    - blobplots_results
+    - abricate_ncbi
+    - abricate_serotypefinder
     - seqsero_results
-    - seqyclean_results
     - CG-Pipeline
     - raw_clean_scatter
     - raw_clean_coverage
@@ -63,6 +64,14 @@ custom_data:
     pconfig:
       id: 'mash_results'
       title: 'MASH results'
+      ylab: 'Organism counts'
+  blobtools_results:
+    id: 'blobtools_results'
+    section_name: 'BLOBTOOLS Results'
+    plot_type: 'bargraph'
+    pconfig:
+      id: 'blobtools_results'
+      title: 'BLOBTOOLS results'
       ylab: 'Organism counts'
   summary_of_results:
     id: 'summary_of_results'
@@ -185,14 +194,14 @@ custom_data:
 sp:
   mash_results:
     fn: 'mash_results.txt'
+  blobtools_results:
+    fn: 'blobtools_results.txt'
   abricate_ncbi:
     fn: 'ncbi.summary.csv'
   abricate_serotypefinder:
     fn: 'serotypefinder.summary.csv'
   seqsero_results:
     fn: 'Seqsero_serotype_results.txt'
-  seqyclean_results:
-    fn: 'seqyclean_summary.txt'
   summary_of_results:
     fn: 'run_results_summary.txt'
   raw_clean_scatter:
