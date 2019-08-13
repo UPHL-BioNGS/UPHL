@@ -3,7 +3,7 @@ import os
 import glob
 import shutil
 from os.path import join
-print("UPHL reference free pipeline v.2019.08.05")
+print("UPHL reference free pipeline v.2019.08.19")
 
 base_directory=workflow.basedir + "/URF_scripts"
 output_directory=os.getcwd()
@@ -40,10 +40,11 @@ rule all:
         # abricate results
         expand("abricate_results/{database}/{database}.{sample}.out.tab", sample=SAMPLE, database=DATABASE),
         expand("abricate_results/{database}/{database}.summary.csv", database=DATABASE),
-        # blobtools results
+        # blobtools results - which requires bwa, samtools, and blast before blobtools can be run
         expand("shovill_result/{sample}/contigs.fa.sa", sample=SAMPLE),
         expand("bwa/{sample}.sorted.bam", sample=SAMPLE),
         expand("bwa/{sample}.sorted.bam.bai", sample=SAMPLE),
+        expand("blast/{sample}.tsv", sample=SAMPLE),
 #        expand("blobtools/{sample}.blobDB.json", sample=SAMPLE),
 #        expand("blobtools/{sample}.blobDB.table.txt", sample=SAMPLE),
 #        expand("blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.bam0.png", sample=SAMPLE),
@@ -56,6 +57,7 @@ rule all:
         output_directory=output_directory,
         base_directory=base_directory
     shell:
+        "mkdir -p results_for_multiqc ; "
         "mkdir -p logs/all ; "
         "date >> logs/all/all.log ; " # time stamp
         "multiqc --version >> logs/all/all.log ; "
@@ -104,7 +106,6 @@ rule fastqc:
     singularity:
         "docker://dukegcb/fastqc:0.11.4"
     shell:
-        "ENV LC_ALL=C ; " # setting perl locale setting
         "date >> {output.log}.log ; " # time stamp
         "fastqc --version >> {output.log}.log ; " # log version
         "fastqc --outdir fastqc --threads {threads} Sequencing_reads/*/*.fastq* 2>> {output.log}.err | tee -a {output.log}.log "
@@ -421,7 +422,6 @@ rule bwa_index:
         log=temp("logs/bwa/{sample}_index")
     singularity:
         "docker://staphb/shovill:1.0.4"
-#        "docker://staphb/bwa:0.7.17"
     shell:
         "date >> {output.log}.log ; " # time stamp
         "echo \"bwa $(bwa 2>&1 | grep Version )\" >> {output.log}.log ; " # version of bwa
@@ -449,43 +449,6 @@ rule bwa:
         "bwa mem -t {threads} {input.contig} {input.read1} {input.read2} 2>> {output.log}.err | samtools sort -o {output.bam} 2>> {output.log}.err > {output.bam} || true ; "
         "samtools index {output.bam} 2>> {output.log}.err | tee -a {output.log}.log || true ; "
         "touch {output}"
-
-#rule bwa:
-#    input:
-#        contig=rules.shovill.output.file,
-#        read1=rules.seqyclean.output.read1,
-#        read2=rules.seqyclean.output.read2,
-#        index=rules.bwa_index.output
-#    threads:
-#        48
-#    output:
-#        bam=temp("bwa/{sample}.bam"),
-#        log=temp("logs/bwa/{sample}")
-#    singularity:
-#        "docker://staphb/bwa:0.7.17"
-#    shell:
-#        "date >> {output.log}.log ; " # time stamp
-#        "echo \"bwa $(bwa 2>&1 | grep Version )\" >> {output.log}.log ; " # version of bwa
-#        "bwa mem -t {threads} {input.contig} {input.read1} {input.read2} 2>> {output.log}.err > {output.bam} || true ; "
-#        "touch {output}"
-
-#rule samtools:
-#    input:
-#        bam=rules.bwa.output.bam
-#    threads:
-#        1
-#    output:
-#        bam="bwa/{sample}.sorted.bam",
-#        bai="bwa/{sample}.sorted.bam.bai",
-#        log=temp("logs/samtools/{sample}")
-#    singularity:
-#        "docker://staphb/samtools:1.9"
-#    shell:
-#        "date >> {output.log}.log ; " # time stamp
-#        "samtools --version >> {output.log}.log ; " # version of samtools
-#        "samtools sort -o {output.bam} {input.bam} 2>> {output.log}.err | tee -a {output.log}.log || true ; "
-#        "samtools index {output.bam} 2>> {output.log}.err | tee -a {output.log}.log || true ; "
-#        "touch {output}"
 
 rule blastn:
     input:
