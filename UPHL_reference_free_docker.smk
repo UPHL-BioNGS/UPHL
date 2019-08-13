@@ -19,32 +19,35 @@ rule all:
         expand("Sequencing_reads/QCed/{sample}_clean_PE1.fastq", sample=SAMPLE),
         expand("Sequencing_reads/QCed/{sample}_clean_PE2.fastq", sample=SAMPLE),
         # running FastQC
-#        "fastqc/fastqc.complete",
+        "fastqc/fastqc.complete",
         # running shovill
-#        expand("shovill_result/{sample}/contigs.fa", sample=SAMPLE),
-#        expand("ALL_assembled/{sample}_contigs.fa", sample=SAMPLE),
+        expand("shovill_result/{sample}/contigs.fa", sample=SAMPLE),
+        expand("ALL_assembled/{sample}_contigs.fa", sample=SAMPLE),
         # mash results
-#        expand("mash/{sample}_mashdist.txt", sample=SAMPLE),
-#        "mash/mash_results.txt",
+        expand("mash/{sample}_mashdist.txt", sample=SAMPLE),
+        "mash/mash_results.txt",
         # prokka results
-#        expand("Prokka/{sample}/{sample}.gff", sample=SAMPLE),
-#        expand("ALL_gff/{sample}.gff", sample=SAMPLE),
+        expand("Prokka/{sample}/{sample}.gff", sample=SAMPLE),
+        expand("ALL_gff/{sample}.gff", sample=SAMPLE),
         # quast results
-#        expand("quast/{sample}/report.tsv", sample=SAMPLE),
+        expand("quast/{sample}/report.tsv", sample=SAMPLE),
         # seqsero results
-#        expand("SeqSero/{sample}.Seqsero_result.txt", sample=SAMPLE),
-#        "SeqSero/Seqsero_serotype_results.txt",
+        expand("SeqSero/{sample}.Seqsero_result.txt", sample=SAMPLE),
+        "SeqSero/Seqsero_serotype_results.txt",
         # cg-pipeline results
-#        expand("cg-pipeline/{sample}.{raw_or_clean}.out.txt", sample=SAMPLE,raw_or_clean=['raw', 'clean']),
-#        "cg-pipeline/cg-pipeline-summary.txt",
+        expand("cg-pipeline/{sample}.{raw_or_clean}.out.txt", sample=SAMPLE,raw_or_clean=['raw', 'clean']),
+        "cg-pipeline/cg-pipeline-summary.txt",
         # abricate results
-#        expand("abricate_results/{database}/{database}.{sample}.out.tab", sample=SAMPLE, database=DATABASE),
-#        expand("logs/abricate_results/{database}.summary.csv", database=DATABASE),
+        expand("abricate_results/{database}/{database}.{sample}.out.tab", sample=SAMPLE, database=DATABASE),
+        expand("abricate_results/{database}/{database}.summary.csv", database=DATABASE),
         # blobtools results
+        expand("shovill_result/{sample}/contigs.fa.sa", sample=SAMPLE),
+        expand("bwa/{sample}.sorted.bam", sample=SAMPLE),
+        expand("bwa/{sample}.sorted.bam.bai", sample=SAMPLE),
 #        expand("blobtools/{sample}.blobDB.json", sample=SAMPLE),
 #        expand("blobtools/{sample}.blobDB.table.txt", sample=SAMPLE),
 #        expand("blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.bam0.png", sample=SAMPLE),
-#"mash/mash_results.txt",
+#        "blobtools/blobtools_results.txt",
         # file summary
 #        "results_for_multiqc/final.txt"
     singularity:
@@ -53,9 +56,10 @@ rule all:
         output_directory=output_directory,
         base_directory=base_directory
     shell:
+        "mkdir -p logs/all ; "
         "date >> logs/all/all.log ; " # time stamp
         "multiqc --version >> logs/all/all.log ; "
-        "wget -nc https://raw.githubusercontent.com/StaPH-B/UPHL/master/URF_scripts/multiqc_config_URF_snakemake_docker.yaml -O multiqc_config.yaml 2>> logs/all/all.err | tee -a logs/all/all.log ; "
+        "wget -nc https://raw.githubusercontent.com/StaPH-B/UPHL/master/URF_scripts/multiqc_config_URF_snakemake_docker.yaml -O multiqc_config.yaml 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
         "multiqc -f --outdir {params.output_directory}/logs --cl_config \"prokka_fn_snames: True\" {params.output_directory}/results_for_multiqc "#2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
 
 def get_read1(wildcards):
@@ -66,31 +70,26 @@ def get_read2(wildcards):
     read2=glob.glob("Sequencing_reads/Raw/" + wildcards.sample + "*_R2_001.fastq.gz") + glob.glob("Sequencing_reads/Raw/" + wildcards.sample + "_2.fastq")
     return(''.join(read2))
 
-def get_reads(wildcards):
-    reads=glob.glob("Sequencing_reads/Raw/*fastq*")
-    return(reads)
-
 rule seqyclean:
     input:
-        read1= get_read1,
-        read2= get_read2
+        read1=get_read1,
+        read2=get_read2
     output:
         read1="Sequencing_reads/QCed/{sample}_clean_PE1.fastq",
         read2="Sequencing_reads/QCed/{sample}_clean_PE2.fastq",
         se="Sequencing_reads/QCed/{sample}_clean_SE.fastq",
         sstxt="Sequencing_reads/QCed/{sample}_clean_SummaryStatistics.txt",
         sstsv="Sequencing_reads/QCed/{sample}_clean_SummaryStatistics.tsv",
-        err="logs/seqyclean/{sample}.err",
-        log="logs/seqyclean/{sample}.log"
+        log=temp("logs/seqyclean/{sample}")
     threads:
         1
     singularity:
         "docker://staphb/seqyclean:1.10.09"
     shell:
-        "date >> {output.log} ; " # time stamp
-        "echo \"seqyclean version: $(seqyclean -h | grep Version)\" >> {output.log} ; " # log version
+        "date >> {output.log}.log ; " # time stamp
+        "echo \"seqyclean version: $(seqyclean -h | grep Version)\" >> {output.log}.log ; " # log version
         "seqyclean -minlen 25 -qual -c /Adapters_plus_PhiX_174.fasta -1 {input.read1} -2 {input.read2} -o Sequencing_reads/QCed/{wildcards.sample}_clean "
-        "2>> {output.err} | tee -a {output.log} "
+        "2>> {output.log}.err | tee -a {output.log}.log "
         "|| true ; touch {output}"
 
 rule fastqc:
@@ -99,16 +98,16 @@ rule fastqc:
         expand("Sequencing_reads/QCed/{sample}_clean_PE2.fastq", sample=SAMPLE),
     output:
         file="fastqc/fastqc.complete",
-        err="logs/fastqc/fastqc.err",
-        log="logs/fastqc/fastqc.log"
+        log=temp("logs/fastqc/fastqc")
     threads:
         1
     singularity:
         "docker://dukegcb/fastqc:0.11.4"
     shell:
-        "date >> {output.log} ; " # time stamp
-        "fastqc --version >> {output.log} ; " # log version
-        "fastqc --outdir fastqc --threads {threads} Sequencing_reads/*/*.fastq* 2>> {output.err} | tee -a {output.log} "
+        "ENV LC_ALL=C ; " # setting perl locale setting
+        "date >> {output.log}.log ; " # time stamp
+        "fastqc --version >> {output.log}.log ; " # log version
+        "fastqc --outdir fastqc --threads {threads} Sequencing_reads/*/*.fastq* 2>> {output.log}.err | tee -a {output.log}.log "
         "|| true ; touch {output}"
 
 rule shovill:
@@ -120,17 +119,15 @@ rule shovill:
     output:
         file="shovill_result/{sample}/contigs.fa",
         final="ALL_assembled/{sample}_contigs.fa",
-        log="logs/shovill/{sample}.log",
-        err="logs/shovill/{sample}.err"
+        log=temp("logs/shovill/{sample}")
     singularity:
         "docker://staphb/shovill:1.0.4"
     shell:
-        "date >> {output.log} ; " # time stamp
-        "shovill --version >> {output.log} ; " # logging shovill version
+        "date >> {output.log}.log ; " # time stamp
+        "shovill --version >> {output.log}.log ; " # logging shovill version
         "RAM=$(free -m --giga | grep \"Mem:\" | awk '{{ print ($2*0.8) }}' | cut -f 1 -d \".\") ; " # getting available RAM
-        "echo \"Using $RAM RAM and {threads} cpu for shovill\" >> {output.log} ; " # logging the amount of RAM
-        "shovill --cpu {threads} --ram $RAM --outdir shovill_result/{wildcards.sample} --R1 {input.read1} --R2 {input.read2} --force "
-        "2>> {output.err} | tee -a {output.log} "
+        "echo \"Using $RAM RAM and {threads} cpu for shovill\" >> {output.log}.log ; " # logging the amount of RAM
+        "shovill --cpu {threads} --ram $RAM --outdir shovill_result/{wildcards.sample} --R1 {input.read1} --R2 {input.read2} --force 2>> {output.log}.err | tee -a {output.log}.log "
         "|| true ; touch {output} ; "
         "cp {output.file} {output.final}" # Duplicating files
 
@@ -140,49 +137,46 @@ rule mash_sketch:
         read2=rules.seqyclean.output.read2
     output:
         file="mash/{sample}.msh",
-        log="logs/mash_sketch/{sample}.log",
-        err="logs/mash_sketch/{sample}.err"
+        log=temp("logs/mash/{sample}_sketch")
     threads:
         1
     singularity:
         "docker://staphb/mash:2.1"
     shell:
-        "date >> {output.log} ; " # time stamp
-        "echo \"mash version: $(mash --version)\" >> {output.log} ; " # logging version
+        "date >> {output.log}.log ; " # time stamp
+        "echo \"mash version: $(mash --version)\" >> {output.log}.log ; " # logging version
         "cat {input.read1} {input.read2} | "
-        "mash sketch -m 2 -o mash/{wildcards.sample} - 2>> {output.err} | tee -a {output.log} "
-        "|| true ; touch {output.file}"
+        "mash sketch -m 2 -o mash/{wildcards.sample} - 2>> {output.log}.err | tee -a {output.log}.log "
+        "|| true ; touch {output}"
 
 rule mash_dist:
     input:
         rules.mash_sketch.output.file
     output:
         file="mash/{sample}_mashdist.txt",
-        log="logs/mash_dist/{sample}.log",
-        err="logs/mash_dist/{sample}.err"
+        log=temp("logs/mash/{sample}_dist")
     threads:
         1
     singularity:
         "docker://staphb/mash:2.1"
     shell:
-        "date 2>> {output.err} | tee -a {output.log} ; " # time stamp
-        "echo \"mash version: $(mash --version)\" >> {output.log} ; " # logging version
+        "date 2>> {output.log}.err | tee -a {output.log}.log ; " # time stamp
+        "echo \"mash version: $(mash --version)\" >> {output.log}.log ; " # logging version
         "mash dist -p {threads} -v 0 /db/RefSeqSketchesDefaults.msh {input} | sort -gk3 > {output.file} "
-        "2>> {output.err} || true ; touch {output} "
+        "2>> {output.log}.err || true ; touch {output} "
 
 rule mash_multiqc:
     input:
         expand("mash/{sample}_mashdist.txt", sample=SAMPLE)
     output:
         file="mash/mash_results.txt",
-        log="logs/mash_pipeline_multiqc/log.log",
-        err="logs/mash_pipeline_multiqc/log.err"
+        log=temp("logs/mash/multiqc")
     threads:
         1
     shell:
-        "date >> {output.log} ; " # time stamp
+        "date >> {output.log}.log ; " # time stamp
         "organisms=($(cat mash/*_mashdist.txt | awk '{{ if ( $4 == 0 ) print $1 }}' | cut -f 8 -d \"-\" | sed 's/^_\(.*\)/\1/' | cut -f 1,2 -d \"_\" | cut -f 1 -d \".\" | sort | uniq -c | sort -rhk 1,1 | awk '{{ print $2 }}' )) ; "
-        "echo \"The organisms found in this run: ${{organisms[@]}}\" >> {output.log} ; "
+        "echo \"The organisms found in this run: ${{organisms[@]}}\" >> {output.log}.log ; "
         "header=\"Sample\" ; "
         """
         for organism in ${{organisms[@]}}
@@ -220,15 +214,14 @@ rule prokka:
     output:
         file="Prokka/{sample}/{sample}.gff",
         final="ALL_gff/{sample}.gff",
-        log="logs/prokka/{sample}.log",
-        err="logs/prokka/{sample}.err"
+        log=temp("logs/prokka/{sample}")
     singularity:
-        "docker://staphb/prokka:1.14"
+        "docker://staphb/prokka:1.14.0"
     shell:
-        "date >> {output.log} ; " # time stamp
-        "prokka -v >> {output.log} ; " # logging version
+        "date >> {output.log}.log ; " # time stamp
+        "prokka -v >> {output.log}.log ; " # logging version
         "mash_result=($(head -n 1 {input.mash_file} | cut -f 1 | cut -f 8 -d \"-\" | sed 's/^_\(.*\)/\1/' | cut -f 1,2 -d \"_\" | cut -f 1 -d \".\" | sed 's/_/ /g' )) || mash_result=('none', 'none') ; "
-        "prokka --cpu {threads} --compliant --centre --URF --mincontiglen 500 --outdir Prokka/{wildcards.sample} --locustag locus_tag --prefix {wildcards.sample} --genus ${{mash_result[0]}} --species ${{mash_result[1]}} --force {input.contig_file} 2>> {output.err} | tee -a {output.log} "
+        "prokka --cpu {threads} --compliant --centre --URF --mincontiglen 500 --outdir Prokka/{wildcards.sample} --locustag locus_tag --prefix {wildcards.sample} --genus ${{mash_result[0]}} --species ${{mash_result[1]}} --force {input.contig_file} 2>> {output.log}.err | tee -a {output.log}.log "
         "|| true ; touch {output} ; "
         "cp {output.file} {output.final}" # duplicating files
 
@@ -237,17 +230,16 @@ rule quast:
         rules.shovill.output.final
     output:
         file="quast/{sample}/report.tsv",
-        log="logs/quast/{sample}.log",
-        err="logs/quast/{sample}.err"
+        log=temp("logs/quast/{sample}")
     threads:
         1
     singularity:
         "docker://staphb/quast:5.0.2"
     shell:
-        "date >> {output.log} ; " # time stamp
-        "quast.py --version >> {output.log} ; " # logging version
+        "date >> {output.log}.log ; " # time stamp
+        "quast.py --version >> {output.log}.log ; " # logging version
         "quast.py {input} --output-dir quast/{wildcards.sample} --threads {threads} "
-        "2>> {output.err} | tee -a {output.log} "
+        "2>> {output.log}.err | tee -a {output.log}.log "
         "|| true ; touch {output} ; "
 
 rule CG_pipeline_shuffle_raw:
@@ -256,15 +248,14 @@ rule CG_pipeline_shuffle_raw:
         read2= get_read2
     output:
         file="Sequencing_reads/shuffled/{sample}_raw_shuffled.fastq.gz",
-        log="logs/cg_pipeline_shuffle_raw/{sample}.log",
-        err="logs/cg_pipeline_shuffle_raw/{sample}.err"
+        log=temp("logs/cg_pipeline/{sample}_shuffle_raw")
     threads:
         1
     singularity:
         "docker://staphb/lyveset:2.0.1"
     shell:
-        "date >> {output.log} ; " # time stamp, no version
-        "run_assembly_shuffleReads.pl -gz {input.read1} {input.read2} > {output.file} 2>> {output.err} "
+        "date >> {output.log}.log ; " # time stamp, no version
+        "run_assembly_shuffleReads.pl -gz {input.read1} {input.read2} > {output.file} 2>> {output.log}.err "
         "|| true ; touch {output}"
 
 rule CG_pipeline_shuffle_clean:
@@ -273,37 +264,35 @@ rule CG_pipeline_shuffle_clean:
         read2=rules.seqyclean.output.read2
     output:
         file="Sequencing_reads/shuffled/{sample}_clean_shuffled.fastq.gz",
-        log="logs/cg_pipeline_shuffle_clean/{sample}.log",
-        err="logs/cg_pipeline_shuffle_clean/{sample}.err"
+        log=temp("logs/cg_pipeline/{sample}_shuffle_clean")
     threads:
         1
     singularity:
         "docker://staphb/lyveset:2.0.1"
     shell:
-        "date >> {output.log} ; " # time stamp, no version
-        "run_assembly_shuffleReads.pl -gz {input.read1} {input.read2} > {output.file} 2>> {output.err} "
+        "date >> {output.log}.log ; " # time stamp, no version
+        "run_assembly_shuffleReads.pl -gz {input.read1} {input.read2} > {output.file} 2>> {output.log}.err "
         "|| true ; touch {output} "
 
 rule CG_pipeline:
     input:
         shuffled_fastq="Sequencing_reads/shuffled/{sample}_{raw_or_clean}_shuffled.fastq.gz",
-        mash_error=rules.mash_sketch.output.err,
+        mash_error=rules.mash_sketch.output.log,
         mash_file=rules.mash_dist.output.file
     output:
         file="cg-pipeline/{sample}.{raw_or_clean}.out.txt",
-        log="logs/cg_pipeline/{sample}.{raw_or_clean}.log",
-        err="logs/cg_pipeline/{sample}.{raw_or_clean}.err"
+        log=temp("logs/cg_pipeline/{sample}_{raw_or_clean}")
     threads:
         48
     singularity:
         "docker://staphb/lyveset:2.0.1"
     shell:
-        "date >> {output.log} ; " # time stamp, no version
-        "wget -nc https://raw.githubusercontent.com/StaPH-B/UPHL/master/URF_scripts/genome_sizes.txt -O logs/genome_sizes.txt ; "
+        "date >> {output.log}.log ; " # time stamp, no version
+        "wget -nc https://raw.githubusercontent.com/StaPH-B/UPHL/master/URF_scripts/genome_sizes.txt -O logs/genome_sizes.txt 2>> {output.log}.err || true ; "
         "mash_result=($(head -n 1 {input.mash_file} | cut -f 1 | cut -f 8 -d \"-\" | sed 's/^_\(.*\)/\1/' | cut -f 1,2 -d \"_\" | cut -f 1 -d \".\" )) || true ; "
-        "genome_length=$(grep $mash_result logs/genome_sizes.txt | grep -v \"#\" | head -n 1 | cut -f 2 -d \":\" | awk '{{ print $0 \"e+06\" }}' ) || genome_length=$(grep 'Estimated genome size:' {input.mash_error} | cut -f 4 -d \" \" ) || genome_length=\"0\" ; "
-        "echo \"The genome length for {wildcards.sample} is $genome_length\" >> {output.log} ; "
-        "run_assembly_readMetrics.pl {input.shuffled_fastq} --fast --numcpus {threads} -e $genome_length 2>> {output.err} > {output.file} "
+        "genome_length=$(grep $mash_result logs/genome_sizes.txt | grep -v \"#\" | head -n 1 | cut -f 2 -d \":\" | awk '{{ print $0 \"e+06\" }}' ) || genome_length=$(grep 'Estimated genome size:' {input.mash_error}.err | cut -f 4 -d \" \" ) || genome_length=\"0\" ; "
+        "echo \"The genome length for {wildcards.sample} is $genome_length\" >> {output.log}.log ; "
+        "run_assembly_readMetrics.pl {input.shuffled_fastq} --fast --numcpus {threads} -e $genome_length 2>> {output.log}.err > {output.file} "
         "|| true ; touch {output}"
 
 rule CG_pipeline_multiqc:
@@ -311,15 +300,14 @@ rule CG_pipeline_multiqc:
         expand("cg-pipeline/{sample}.{raw_or_clean}.out.txt", sample=SAMPLE, raw_or_clean=['raw', 'clean'])
     output:
         file="cg-pipeline/cg-pipeline-summary.txt",
-        log="logs/cg_pipeline_multiqc/log.log",
-        err="logs/cg_pipeline_multiqc/log.err"
+        log=temp("logs/cg_pipeline/multiqc")
     threads:
         1
     params:
         base_directory=base_directory,
         output_directory=output_directory
     shell:
-        "date >> {output.log} ; " # time stamp, no version
+        "date >> {output.log}.log ; " # time stamp, no version
         "grep \"avgReadLength\" cg-pipeline/*.out.txt | sort | uniq | head -n 1 | cut -f 2- -d ':' > cg-pipeline/cg-pipeline-summary.txt || true ; "
         "grep -v \"avgReadLength\" cg-pipeline/*.out.txt | cut -f 2- -d ':' | sort | uniq >> cg-pipeline/cg-pipeline-summary.txt || true ; "
         "touch {output} "
@@ -331,15 +319,14 @@ rule seqsero:
     output:
         file="SeqSero/{sample}/Seqsero_result.txt",
         final="SeqSero/{sample}.Seqsero_result.txt",
-        log="logs/seqsero/{sample}.log",
-        err="logs/seqsero/{sample}.err"
+        log=temp("logs/seqsero/{sample}")
     threads:
         1
     singularity:
         "docker://staphb/seqsero:1.0.1"
     shell:
-        "date >> {output.log} ; " # time stamp
-        "SeqSero.py -m 2 -d SeqSero/{wildcards.sample} -i {input} 2>> {output.err} >> {output.log} "
+        "date >> {output.log}.log ; " # time stamp
+        "SeqSero.py -m 2 -d SeqSero/{wildcards.sample} -i {input} 2>> {output.log}.err >> {output.log}.log "
         "|| true ; touch {output} ; "
         "cp {output.file} {output.final}"
 
@@ -348,15 +335,14 @@ rule seqsero_multiqc:
         expand("SeqSero/{sample}.Seqsero_result.txt", sample=SAMPLE)
     output:
         file="SeqSero/Seqsero_serotype_results.txt",
-        log="logs/seqsero_multiqc/log.log",
-        err="logs/seqsero_multiqc/log.err"
+        log=temp("logs/seqsero/multiqc")
     params:
         base_directory=base_directory,
         output_directory=output_directory
     threads:
         1
     shell:
-        "date >> {output.log} ; " # time stamp
+        "date >> {output.log}.log ; " # time stamp
         "echo -e \"Sample\tInput_files\tO_antigen_prediction\tH1_antigen_prediction(fliC)\tH2_antigen_prediction(fljB)\tPredicted_antigenic_profile\tPredicted_serotype(s)\" > SeqSero/Seqsero_serotype_results_all.txt ; "
         "RESULTS=$(ls SeqSero/*/Seqsero_result.txt) ; "
         """
@@ -380,129 +366,161 @@ rule abricate:
         rules.shovill.output.file
     output:
         file="abricate_results/{database}/{database}.{sample}.out.tab",
-        log="logs/abricate/{sample}.{database}.log",
-        err="logs/abricate/{sample}.{database}.err"
+        log=temp("logs/abricate/{sample}.{database}")
     threads:
         5
     singularity:
         "docker://staphb/abricate:0.8.13s"
     shell:
-        "date >> {output.log} ; " # time stamp
-        "abricate --version >> {output.log} ; " # version of abricate
-        "abricate --list >> {output.log} ; " # date of databases
-        "abricate --db {wildcards.database} --threads {threads} {input} > {output.file} 2>> {output.err} "
+        "date >> {output.log}.log ; " # time stamp
+        "abricate --version >> {output.log}.log ; " # version of abricate
+        "abricate --list >> {output.log}.log ; " # date of databases
+        "abricate --db {wildcards.database} --threads {threads} {input} > {output.file} 2>> {output.log}.err "
         "|| true ; touch {output}"
 
 rule abricate_summary:
     input:
         expand("abricate_results/{database}/{database}.{sample}.out.tab", sample=SAMPLE, database=DATABASE),
     output:
-        file="logs/abricate_results/{database}.summary.txt",
-        log="logs/abricate_summary/{database}.log",
-        err="logs/abricate_summary/{database}.err"
+        file="abricate_results/{database}/{database}.summary.txt",
+        log=temp("logs/abricate/{database}_summary")
     threads:
         1
     singularity:
         "docker://staphb/abricate:0.8.13s"
     shell:
-        "date >> {output.log} ; " # time stamp
-        "abricate --version >> {output.log} ; " # version of abricate
-        "abricate --summary abricate_results*/{wildcards.database}/{wildcards.database}*tab > {output.file} 2>> {output.err} "
+        "date >> {output.log}.log ; " # time stamp
+        "abricate --version >> {output.log}.log ; " # version of abricate
+        "abricate --summary abricate_results*/{wildcards.database}/{wildcards.database}*tab > {output.file} 2>> {output.log}.err "
         "|| true ; touch {output}"
 
 rule abricate_multiqc:
     input:
         rules.abricate_summary.output.file
     output:
-        file="logs/abricate_results/{database}.summary.csv",
-        log="logs/abricate_multiqc/{database}.log",
-        err="logs/abricate_multiqc/{database}.err"
+        file="abricate_results/{database}/{database}.summary.csv",
+        log=temp("logs/abricate/{database}_multiqc")
     threads:
         1
     shell:
-        "date 2>> {output.err} | tee -a {output.log} ; "
+        "date 2>> {output.log}.err | tee -a {output.log}.log ; "
         "cat {input} | "
         "sed 's/#//g' | sed 's/.tab//g' | sed \"s/{wildcards.database}.//g\" | "
         "awk '{{ sub(\"^.*/\", \"\", $1); print}}' | "
         "awk '{{ for (i=1;i<=NF;i++) if ($i ~ \";\" )gsub(\";.*$\",\"\",$i)g ; else continue}}{{print $0}}' | "
         "awk '{{ $2=\"\" ; print $0 }}' | sed 's/\\t/,/g' | sed 's/ /,/g' | "
         "sed 's/[.],/0,/g' | sed 's/,[.]/,0/g' | sed 's/,,/,/g' "
-        "> {output.file} 2>> {output.err} "
+        "> {output.file} 2>> {output.log}.err "
         "|| true ; touch {output} "
 
 rule bwa_index:
     input:
-        rules.shovill.output
+        rules.shovill.output.file
     output:
         index="shovill_result/{sample}/contigs.fa.sa",
-        log="logs/bwa_index/{sample}.log",
-        err="logs/bwa_index/{sample}.err"
+        log=temp("logs/bwa/{sample}_index")
     singularity:
-        "docker://staphb/bwa:0.7.17"
+        "docker://staphb/shovill:1.0.4"
+#        "docker://staphb/bwa:0.7.17"
     shell:
-        "date >> {output.log} ; " # time stamp
-        "echo \"bwa $(bwa 2>&1 | grep Version )\" >> {output.log} ; " # version of bwa
-        "bwa index {input} || true ; "
+        "date >> {output.log}.log ; " # time stamp
+        "echo \"bwa $(bwa 2>&1 | grep Version )\" >> {output.log}.log ; " # version of bwa
+        "bwa index {input} 2>> {output.log}.err | tee -a {output.log}.log || true ; "
         "touch {output}"
 
 rule bwa:
     input:
-        contig=rules.shovill.output,
+        contig=rules.shovill.output.file,
         read1=rules.seqyclean.output.read1,
         read2=rules.seqyclean.output.read2,
-        index=rules.bwa_index.output
+        index=rules.bwa_index.output.index
     threads:
         48
     output:
         bam="bwa/{sample}.sorted.bam",
         bai="bwa/{sample}.sorted.bam.bai",
-        log="logs/bwa/{sample}.log",
-        err="logs/bwa/{sample}.err"
+        log=temp("logs/bwa/{sample}")
     singularity:
-        "docker://staphb/bwa:0.7.17"
+        "docker://staphb/shovill:1.0.4"
     shell:
-        "date >> {output.log} ; " # time stamp
-        "echo \"bwa $(bwa 2>&1 | grep Version )\" >> {output.log} ; " # version of bwa
-        "bwa mem -t {threads} {input.contig} {input.read1} {input.read2} | samtools sort -o {output.bam} || true ; "
-        "samtools index {output.bam} || true ; "
+        "date >> {output.log}.log ; " # time stamp
+        "echo \"bwa $(bwa 2>&1 | grep Version )\" >> {output.log}.log ; " # version of bwa
+        "samtools --version >> {output.log}.log ; " # version of samtools
+        "bwa mem -t {threads} {input.contig} {input.read1} {input.read2} 2>> {output.log}.err | samtools sort -o {output.bam} 2>> {output.log}.err > {output.bam} || true ; "
+        "samtools index {output.bam} 2>> {output.log}.err | tee -a {output.log}.log || true ; "
         "touch {output}"
+
+#rule bwa:
+#    input:
+#        contig=rules.shovill.output.file,
+#        read1=rules.seqyclean.output.read1,
+#        read2=rules.seqyclean.output.read2,
+#        index=rules.bwa_index.output
+#    threads:
+#        48
+#    output:
+#        bam=temp("bwa/{sample}.bam"),
+#        log=temp("logs/bwa/{sample}")
+#    singularity:
+#        "docker://staphb/bwa:0.7.17"
+#    shell:
+#        "date >> {output.log}.log ; " # time stamp
+#        "echo \"bwa $(bwa 2>&1 | grep Version )\" >> {output.log}.log ; " # version of bwa
+#        "bwa mem -t {threads} {input.contig} {input.read1} {input.read2} 2>> {output.log}.err > {output.bam} || true ; "
+#        "touch {output}"
+
+#rule samtools:
+#    input:
+#        bam=rules.bwa.output.bam
+#    threads:
+#        1
+#    output:
+#        bam="bwa/{sample}.sorted.bam",
+#        bai="bwa/{sample}.sorted.bam.bai",
+#        log=temp("logs/samtools/{sample}")
+#    singularity:
+#        "docker://staphb/samtools:1.9"
+#    shell:
+#        "date >> {output.log}.log ; " # time stamp
+#        "samtools --version >> {output.log}.log ; " # version of samtools
+#        "samtools sort -o {output.bam} {input.bam} 2>> {output.log}.err | tee -a {output.log}.log || true ; "
+#        "samtools index {output.bam} 2>> {output.log}.err | tee -a {output.log}.log || true ; "
+#        "touch {output}"
 
 rule blastn:
     input:
-        rules.shovill.output
+        rules.shovill.output.file
     output:
         tsv="blast/{sample}.tsv",
-        log="logs/blastn/{sample}.log",
-        err="logs/blastn/{sample}.err"
+        log=temp("logs/blastn/{sample}")
     threads:
         10
     singularity:
         "docker://ncbi/blast:2.9.0"
     shell:
-        "date >> {output.log} ; " # time stamp
-        "blastn -version >> {output.log} ; " # version of blastn
-        "echo \"The blastdb location is $BLASTDB\" >> {output.log} ; "
-        "blastn -query {input} -out {output} -num_threads {threads} -db /blast/blastdb/nt -outfmt '6 qseqid staxids bitscore std' -max_target_seqs 10 -max_hsps 1 -evalue 1e-25 || true ; "
+        "date >> {output.log}.log ; " # time stamp
+        "blastn -version >> {output.log}.log ; " # version of blastn
+        "echo \"The blastdb location is $BLASTDB\" >> {output.log}.log ; "
+        "blastn -query {input} -out {output.tsv} -num_threads {threads} -db /blast/blastdb/nt -outfmt '6 qseqid staxids bitscore std' -max_target_seqs 10 -max_hsps 1 -evalue 1e-25 2>> {output.log}.log | tee -a {output.log}.err || true ; "
         "touch {output}"
 
 rule blobtools_create:
     input:
-        contig=rules.shovill.output,
+        contig=rules.shovill.output.file,
         blast=rules.blastn.output,
         bam=rules.bwa.output.bam
     output:
         cov="blobtools/{sample}.{sample}.sorted.bam.cov",
         json="blobtools/{sample}.blobDB.json",
-        log="logs/blobtools_create/{sample}.log",
-        err="logs/blobtools_create/{sample}.err"
+        log=temp("logs/blobtools/{sample}_create")
     threads:
         1
     singularity:
         "docker://chrishah/blobtools:v1.1.1"
     shell:
-        "date >> {output.log} ; " # time stamp
-        "echo \"blobtools version $(blobtools -v)\" >> {output.log} ; " # version of blobtools
-        "blobtools create -o blobtools/{wildcards.sample} -i {input.contig} -b {input.bam} -t {input.blast} || true ; "
+        "date >> {output.log}.log ; " # time stamp
+        "echo \"blobtools version $(blobtools -v)\" >> {output.log}.log ; " # version of blobtools
+        "blobtools create -o blobtools/{wildcards.sample} -i {input.contig} -b {input.bam} -t {input.blast} 2>> {output.log}.err | tee -a {output.log}.log || true ; "
         "touch {output}"
 
 rule blobtools_view:
@@ -510,16 +528,15 @@ rule blobtools_view:
         rules.blobtools_create.output.json,
     output:
         txt="blobtools/{sample}.blobDB.table.txt",
-        log="logs/blobtools_view/{sample}.log",
-        err="logs/blobtools_view/{sample}.err"
+        log=temp("logs/blobtools/{sample}_view")
     threads:
         1
     singularity:
         "docker://chrishah/blobtools:v1.1.1"
     shell:
-        "date >> {output.log} ; " # time stamp
-        "echo \"blobtools version $(blobtools -v)\" >> {output.log} ; " # version of blobtools
-        "blobtools view -i {input} -o blobtools/ || true ; "
+        "date >> {output.log}.log ; " # time stamp
+        "echo \"blobtools version $(blobtools -v)\" >> {output.log}.log ; " # version of blobtools
+        "blobtools view -i {input} -o blobtools/ 2>> {output.log}.err | tee -a {output.log}.log || true ; "
         "touch {output}"
 
 rule blobtools_plot:
@@ -530,16 +547,15 @@ rule blobtools_plot:
         png="blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.bam0.png",
         covpng="blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.read_cov.bam0.png",
         txt="blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.stats.txt",
-        log="logs/blobtools_plot/{sample}.log",
-        err="logs/blobtools_plot/{sample}.err"
+        log=temp("logs/blobtools/{sample}_plot")
     threads:
         1
     singularity:
         "docker://chrishah/blobtools:v1.1.1"
     shell:
-        "date >> {output.log} ; " # time stamp
-        "echo \"blobtools version $(blobtools -v)\" >> {output.log} ; " # version of blobtools
-        "blobtools plot -i {input.json} -o blobtools/ -r species --format png || true ; "
+        "date >> {output.log}.log ; " # time stamp
+        "echo \"blobtools version $(blobtools -v)\" >> {output.log}.log ; " # version of blobtools
+        "blobtools plot -i {input.json} -o blobtools/ -r species --format png 2>> {output.log}.err | tee -a {output.log}.log || true ; "
         "touch {output}"
 
 rule blobtools_multiqc:
@@ -547,14 +563,13 @@ rule blobtools_multiqc:
         expand("blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.stats.txt", sample=SAMPLE)
     output:
         file="blobtools/blobtools_results.txt",
-        log="logs/blobtools_multiqc/log.log",
-        err="logs/blobtools_multiqc/log.err"
+        log=temp("logs/blobtools/multiqc")
     threads:
         1
     shell:
-        "date >> {output.log} ; " # time stamp
+        "date >> {output.log}.log ; " # time stamp
         "organisms=($(cut -f 1 blobtools/*blobplot.stats.txt | grep -v \"all\" | grep -v \"#\" | tr ' ' '_' | sort | uniq -c | sort -rhk 1,1 | awk '{{ print $2 }}' )) ; "
-        "echo \"The organisms found in this run: ${{organisms[@]}}\" >> {output.log} ; "
+        "echo \"The organisms found in this run: ${{organisms[@]}}\" >> {output.log}.log ; "
         "header=\"Sample\" ; "
         """
         for organism in ${{organisms[@]}}
@@ -618,28 +633,27 @@ rule multiqc_prep:
         expand("blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.bam0.png", sample=SAMPLE),
         "blobtools/blobtools_results.txt",
     output:
-        "logs/all/all.log",
-        "logs/all/all.err",
-        "results_for_multiqc/final.txt"
+        log=temp("logs/all/all"),
+        file="results_for_multiqc/final.txt"
     params:
         output_directory=output_directory,
         base_directory=base_directory
     shell:
-        "date 2>> logs/all/all.err | tee -a logs/all/all.log ; " # time stamp
+        "date 2>> {output.log}.err | tee -a {output.log}.log ; " # time stamp
         # getting the results in the right places
-        "{params.base_directory}/check_multiqc_docker.sh                      {params.output_directory}                       2>> logs/all/all.err | tee -a logs/all/all.log ; "
-        "ln -s {params.output_directory}/Prokka*/*/*txt                       {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
-        "ln -s {params.output_directory}/SeqSero/Seqsero_serotype_results.txt {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
-        "ln -s {params.output_directory}/mash/mash_results.txt                {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
-        "ln -s {params.output_directory}/blobtools/blobtools_results.txt      {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
-        "ln -s {params.output_directory}/cg-pipeline/cg-pipeline-summary.txt  {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
-        "ln -s {params.output_directory}/logs/abricate_results/*.summary.csv  {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
-        "ln -s {params.output_directory}/quast                                {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
-        "ln -s {params.output_directory}/logs/File_heatmap.csv                {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
-        "ln -s {params.output_directory}/logs/raw_clean_coverage.txt          {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
-        "ln -s {params.output_directory}/logs/raw_clean_scatter.csv           {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
-        "ln -s {params.output_directory}/run_file_summary.txt                 {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
-        "ln -s {params.output_directory}/fastqc                               {params.output_directory}/results_for_multiqc/. 2>> logs/all/all.err | tee -a logs/all/all.log || true ; "
+        "{params.base_directory}/check_multiqc_docker.sh                      {params.output_directory}                       2>> {output.log}.err | tee -a {output.log}.log ; "
+        "ln -s {params.output_directory}/Prokka*/*/*txt                       {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
+        "ln -s {params.output_directory}/SeqSero/Seqsero_serotype_results.txt {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
+        "ln -s {params.output_directory}/mash/mash_results.txt                {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
+        "ln -s {params.output_directory}/blobtools/blobtools_results.txt      {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
+        "ln -s {params.output_directory}/cg-pipeline/cg-pipeline-summary.txt  {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
+        "ln -s {params.output_directory}/abricate_results/*/*.summary.csv     {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
+        "ln -s {params.output_directory}/quast                                {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
+        "ln -s {params.output_directory}/logs/File_heatmap.csv                {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
+        "ln -s {params.output_directory}/logs/raw_clean_coverage.txt          {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
+        "ln -s {params.output_directory}/logs/raw_clean_scatter.csv           {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
+        "ln -s {params.output_directory}/run_file_summary.txt                 {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
+        "ln -s {params.output_directory}/fastqc                               {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
         # formatting for multiqc
         "cat run_results_summary.txt | sed 's/simple_mash_result/A.simple_mash_result/g' | sed 's/simple_seqsero_result/B.simple_seqsero_result/g' | "
         "sed 's/abricate_serotype_O/C.abricate_serotype_O/g' | sed 's/abricate_serotype_H/D.abricate_serotype_H/g' | sed 's/fastqc_raw_reads_2/E.fastqc_raw_reads_2/g' | "
