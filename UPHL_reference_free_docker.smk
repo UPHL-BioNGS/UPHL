@@ -45,12 +45,12 @@ rule all:
         expand("bwa/{sample}.sorted.bam", sample=SAMPLE),
         expand("bwa/{sample}.sorted.bam.bai", sample=SAMPLE),
         expand("blast/{sample}.tsv", sample=SAMPLE),
-#        expand("blobtools/{sample}.blobDB.json", sample=SAMPLE),
-#        expand("blobtools/{sample}.blobDB.table.txt", sample=SAMPLE),
-#        expand("blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.bam0.png", sample=SAMPLE),
-#        "blobtools/blobtools_results.txt",
+        expand("blobtools/{sample}.blobDB.json", sample=SAMPLE),
+        expand("blobtools/{sample}.blobDB.table.txt", sample=SAMPLE),
+        expand("blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.bam0.png", sample=SAMPLE),
+        "blobtools/blobtools_results.txt",
         # file summary
-#        "results_for_multiqc/final.txt"
+        "results_for_multiqc/File_heatmap.csv"
     singularity:
         "docker://ewels/multiqc:1.7"
     params:
@@ -470,7 +470,7 @@ rule blastn:
 rule blobtools_create:
     input:
         contig=rules.shovill.output.file,
-        blast=rules.blastn.output,
+        blast=rules.blastn.output.tsv,
         bam=rules.bwa.output.bam
     output:
         cov="blobtools/{sample}.{sample}.sorted.bam.cov",
@@ -504,7 +504,7 @@ rule blobtools_view:
 
 rule blobtools_plot:
     input:
-        table=rules.blobtools_view.output,
+        table=rules.blobtools_view.output.txt,
         json=rules.blobtools_create.output.json
     output:
         png="blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.bam0.png",
@@ -589,7 +589,7 @@ rule multiqc_prep:
         "cg-pipeline/cg-pipeline-summary.txt",
         # abricate results
         expand("abricate_results/{database}/{database}.{sample}.out.tab", sample=SAMPLE, database=DATABASE),
-        expand("logs/abricate_results/{database}.summary.csv", database=DATABASE),
+        expand("abricate_results/{database}/{database}.summary.csv", database=DATABASE),
         # blobtools results
         expand("blobtools/{sample}.blobDB.json", sample=SAMPLE),
         expand("blobtools/{sample}.blobDB.table.txt", sample=SAMPLE),
@@ -597,7 +597,7 @@ rule multiqc_prep:
         "blobtools/blobtools_results.txt",
     output:
         log=temp("logs/all/all"),
-        file="results_for_multiqc/final.txt"
+        file="results_for_multiqc/File_heatmap.csv"
     params:
         output_directory=output_directory,
         base_directory=base_directory

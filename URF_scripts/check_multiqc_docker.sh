@@ -128,7 +128,6 @@ do
     seqsero_profile="not_salmonella"
     simple_seqsero_result="not_salmonella"
   fi
-  echo "0 $sample: 1 $seqsero_serotype: 2 $seqsero_profile: 3 $simple_seqsero_result"
   SEQSERO_RESULTS=(${SEQSERO_RESULTS[@]} "$sample;$seqsero_serotype;$seqsero_profile;$simple_seqsero_result")
 
   # abricate SerotypeFinder
@@ -188,7 +187,7 @@ done
 #echo ${STX_ABRICATE_RESULTS[@]}
 
 # creating a heatmap for the files for easy visualization
-echo "sample,fastqc,seqyclean,cg-pipeline,mash,shovill,prokka,quast,seqsero,abricate:serotypefinder,abricate:ncbi" > "$out/logs/File_heatmap.csv"
+echo "sample,fastqc,seqyclean,cg-pipeline,mash,shovill,prokka,quast,seqsero,abricate:serotypefinder,abricate:ncbi" > $out/logs/File_heatmap.csv
 for sample in ${SAMPLES[@]}
 do
   sample=$sample # woot! A useless line
@@ -264,10 +263,8 @@ do
   else
     stx_file="1"
   fi
-  echo $heatmap_line >> "$out/logs/File_heatmap.csv"
   echo "$sample,$fastqc_file,$seqyclean_file,$cg_file,$mash_file,$shovill_file,$prokka_file,$quast_file,$seqsero_file,$serotypefinder_file,$ncbi_file" >> $out/logs/File_heatmap.csv
 done
-
 # Getting all the results in one file
 echo "sample_id,sample,mash_result,simple_mash_result,seqsero_serotype,seqsero_profile,simple_seqsero_result,cg_cln_coverage,cg_raw_coverage,fastqc_raw_reads_1,fastqc_raw_reads_2,fastqc_clean_reads_PE1,fastqc_clean_reads_PE2,abricate_ecoh_O,abricate_ecoh_H,abricate_serotype_O,abricate_serotype_H,stxeae_result,argannot,resfinder,card,plasmidfinder,vfdb,ecoli_vf,ncbi" > run_results.csv
 for sample in ${SAMPLES[@]}
@@ -280,7 +277,6 @@ do
   seqsero_result_split=($(history -p ${SEQSERO_RESULTS[@]} | sort | uniq | grep $sample | tr ';' ' ' ))
   seqsero_serotype=${seqsero_result_split[1]}
   seqsero_profile=$(echo ${seqsero_result_split[2]} | tr ',' ';' )
-  echo "should be new version"
   simple_seqsero_result=${seqsero_result_split[3]}
   cg_result_split=($(history -p ${CGPIPELINE_RESULTS[@]} | sort | uniq | grep $sample | tr ':' ' ' ))
   cg_cln_coverage=${cg_result_split[1]}
@@ -309,17 +305,17 @@ do
 done
 
 echo "Mash results count"
-mash_column=$(head -n 1 $out/run_results_summary.txt | tr "\t" "\n" | grep -n ^"simple_mash_result" | cut -f 1 -d ":" )
-cut -f $mash_column $out/run_results_summary.txt | awk '{if(NR>1)print}' | sed 's/.-//g' | sort | uniq -c | sort -k 1 -n | grep -v "no_result"
+mash_column=$(head -n 1 $out/run_results.csv | tr "," "\n" | grep -n ^"simple_mash_result" | cut -f 1 -d ":" )
+cut -f $mash_column -d "," $out/run_results.csv | awk '{if(NR>1)print}' | sed 's/.-//g' | sort | uniq -c | sort -k 1 -n | grep -v "no_result"
 
 echo "Seqsero results count"
-seqsero_column=$(head -n 1 $out/run_results_summary.txt | tr "\t" "\n" | grep -n ^"simple_seqsero_result" | cut -f 1 -d ":" )
-cut -f $seqsero_column $out/run_results_summary.txt | awk '{if(NR>1)print}' | sort | uniq -c | sort -k 1 -n | grep -v "no_result" | grep -v "not_salmonella"
+seqsero_column=$(head -n 1 $out/run_results.csv | tr "," "\n" | grep -n ^"simple_seqsero_result" | cut -f 1 -d ":" )
+cut -f $seqsero_column -d "," $out/run_results.csv | awk '{if(NR>1)print}' | sort | uniq -c | sort -k 1 -n | grep -v "no_result" | grep -v "not_salmonella"
 
 echo "Abricate serotype results count"
-O_serotype_column=$(head -n 1 $out/run_results_summary.txt | tr "\t" "\n" | grep -n ^"abricate_serotype_O" | cut -f 1 -d ":" )
-H_serotype_column=$(head -n 1 $out/run_results_summary.txt | tr "\t" "\n" | grep -n ^"abricate_serotype_H" | cut -f 1 -d ":" )
-cut -f $O_serotype_column,$H_serotype_column $out/run_results_summary.txt | awk '{if(NR>1)print}' | sort | uniq -c |  sort -k 1 -n | grep -v "no_result" | grep -v "not_ecoli"
+O_serotype_column=$(head -n 1 $out/run_results.csv | tr "," "\n" | grep -n ^"abricate_serotype_O" | cut -f 1 -d ":" )
+H_serotype_column=$(head -n 1 $out/run_results.csv | tr "," "\n" | grep -n ^"abricate_serotype_H" | cut -f 1 -d ":" )
+cut -f $O_serotype_column,$H_serotype_column -d "," $out/run_results.csv | awk '{if(NR>1)print}' | sort | uniq -c |  sort -k 1 -n | grep -v "no_result" | grep -v "not_ecoli"
 
 date
 echo "Finding each file for each sample complete!"
