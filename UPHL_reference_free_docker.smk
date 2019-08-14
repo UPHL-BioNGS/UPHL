@@ -433,7 +433,8 @@ rule bwa:
         contig=rules.shovill.output.file,
         read1=rules.seqyclean.output.read1,
         read2=rules.seqyclean.output.read2,
-        index=rules.bwa_index.output.index
+        index=rules.bwa_index.output.index,
+        test=rules.blastn.output.tsv
     threads:
         48
     output:
@@ -446,7 +447,7 @@ rule bwa:
         "date >> {output.log}.log ; " # time stamp
         "echo \"bwa $(bwa 2>&1 | grep Version )\" >> {output.log}.log ; " # version of bwa
         "samtools --version >> {output.log}.log ; " # version of samtools
-        "bwa mem -t {threads} {input.contig} {input.read1} {input.read2} 2>> {output.log}.err | samtools sort -o {output.bam} 2>> {output.log}.err > {output.bam} || true ; "
+        "if [ -s {input.test} ] ; then bwa mem -t {threads} {input.contig} {input.read1} {input.read2} 2>> {output.log}.err | samtools sort -o {output.bam} 2>> {output.log}.err > {output.bam} || true ; fi ; " # the if statement is for those without a blast nt database
         "samtools index {output.bam} 2>> {output.log}.err | tee -a {output.log}.log || true ; "
         "touch {output}"
 
