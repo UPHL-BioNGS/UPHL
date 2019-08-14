@@ -11,7 +11,7 @@ This analysis allows
 
 (More information can be found at [UPHL's website](https://uphl.utah.gov/infectious-diseases/next-generation-sequencing/))
 
-# How to download this workflow:
+## How to download this repository:
 ```
 git clone https://github.com/StaPH-B/UPHL.git
 ```
