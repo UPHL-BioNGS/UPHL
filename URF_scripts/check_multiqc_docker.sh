@@ -186,6 +186,20 @@ do
 done
 #echo ${STX_ABRICATE_RESULTS[@]}
 
+BLOBTOOLS_RESULTS=()
+for sample in ${SAMPLES[@]}
+do
+  if [ -f "$out/blobtools/$sample.blobDB.json.bestsum.species.p8.span.100.blobplot.stats.txt" ]
+  then
+    blobtools_result=$(grep -v ^"#" $out/blobtools/$sample.blobDB.json.bestsum.species.p8.span.100.blobplot.stats.txt | tr ' ' '_' | sort -k 3,3 -h | grep -v all | tail -n 1 | cut -f 1 )
+    if [ -z "$blobtools_result" ]; then blobtools_result="not_found"; fi
+  else
+    blobtools_result="not_found"
+  fi
+  BLOBTOOLS_RESULTS=(${BLOBTOOLS_RESULTS[@]} "$sample:$blobtools_result")
+done
+#echo ${BLOBTOOLS_RESULTS[@]}
+
 # creating a heatmap for the files for easy visualization
 echo "sample,fastqc,seqyclean,cg-pipeline,mash,shovill,prokka,quast,seqsero,abricate:serotypefinder,abricate:ncbi,blobtools" > $out/logs/File_heatmap.csv
 for sample in ${SAMPLES[@]}
@@ -272,7 +286,7 @@ do
   echo "$sample,$fastqc_file,$seqyclean_file,$cg_file,$mash_file,$shovill_file,$prokka_file,$quast_file,$seqsero_file,$serotypefinder_file,$ncbi_file,$blobtools_file" >> $out/logs/File_heatmap.csv
 done
 # Getting all the results in one file
-echo "sample_id,sample,mash_result,simple_mash_result,seqsero_serotype,seqsero_profile,simple_seqsero_result,cg_cln_coverage,cg_raw_coverage,fastqc_raw_reads_1,fastqc_raw_reads_2,fastqc_clean_reads_PE1,fastqc_clean_reads_PE2,abricate_ecoh_O,abricate_ecoh_H,abricate_serotype_O,abricate_serotype_H,stxeae_result,argannot,resfinder,card,plasmidfinder,vfdb,ecoli_vf,ncbi" > run_results.csv
+echo "sample_id,sample,mash_result,simple_mash_result,seqsero_serotype,seqsero_profile,simple_seqsero_result,cg_cln_coverage,cg_raw_coverage,fastqc_raw_reads_1,fastqc_raw_reads_2,fastqc_clean_reads_PE1,fastqc_clean_reads_PE2,abricate_ecoh_O,abricate_ecoh_H,abricate_serotype_O,abricate_serotype_H,stxeae_result,argannot,resfinder,card,plasmidfinder,vfdb,ecoli_vf,ncbi,blobtools" > run_results.csv
 for sample in ${SAMPLES[@]}
 do
   sample_id=$(echo $sample | cut -f 1 -d "-" )
@@ -307,7 +321,8 @@ do
   ecoli_vf=${stx_result_split[1]}
   ncbi_result_split=($(history -p ${NCBI_ABRICATE_RESULTS[@]} | sort | uniq | grep $sample | tr ':' ' ' ))
   ncbi=${ncbi_result_split[1]}
-  echo "$sample_id,$sample,$mash_result,$simple_mash_result,$seqsero_serotype,$seqsero_profile,$simple_seqsero_result,$cg_cln_coverage,$cg_raw_coverage,$fastqc_raw_reads_1,$fastqc_raw_reads_2,$fastqc_clean_reads_PE1,$fastqc_clean_reads_PE2,$abricate_ecoh_O,$abricate_ecoh_H,$abricate_serotype_O,$abricate_serotype_H,$stxeae_result,$argannot,$resfinder,$card,$plasmidfinder,$vfdb,$ecoli_vf,$ncbi" >> run_results.csv
+  blobtools=($(history -p ${BLOBTOOLS_RESULTS[@]} | sort | uniq | grep $sample | cut -f 2 -d ":" ))
+  echo "$sample_id,$sample,$mash_result,$simple_mash_result,$seqsero_serotype,$seqsero_profile,$simple_seqsero_result,$cg_cln_coverage,$cg_raw_coverage,$fastqc_raw_reads_1,$fastqc_raw_reads_2,$fastqc_clean_reads_PE1,$fastqc_clean_reads_PE2,$abricate_ecoh_O,$abricate_ecoh_H,$abricate_serotype_O,$abricate_serotype_H,$stxeae_result,$argannot,$resfinder,$card,$plasmidfinder,$vfdb,$ecoli_vf,$ncbi,$blobtools" >> run_results.csv
 done
 
 echo "Mash results count"

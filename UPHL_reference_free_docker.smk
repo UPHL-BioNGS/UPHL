@@ -532,7 +532,7 @@ rule blobtools_multiqc:
         1
     shell:
         "date >> {output.log}.log ; " # time stamp
-        "organisms=($(cut -f 1 blobtools/*blobplot.stats.txt | grep -v \"all\" | grep -v \"#\" | tr ' ' '_' | sort | uniq -c | sort -rhk 1,1 | awk '{{ print $2 }}' )) ; "
+        "organisms=($(cut -f 1 blobtools/*blobplot.stats.txt | grep -v \"all\" | grep -v ^\"#\" | tr ' ' '_' | sort | uniq -c | sort -rhk 1,1 | awk '{{ print $2 }}' )) ; "
         "echo \"The organisms found in this run: ${{organisms[@]}}\" >> {output.log}.log ; "
         "header=\"Sample\" ; "
         """
