@@ -1,6 +1,6 @@
 # Automatic detection of new sequencing run completion and pipeline initiation. 
 
-Most of our sequencing is done on the Illumina MiSeq. Fastq generation is done through BaseSpace and seemless is transfer is made possible via [basemount](https://basemount.basespace.illumina.com/). 
+Most of our sequencing is done on the Illumina MiSeq. Fastq generation is done through BaseSpace and seemless transfer is made possible via [basemount](https://basemount.basespace.illumina.com/). 
 
 Mounting BaseSpace to our linux workstation:
 
