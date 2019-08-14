@@ -428,6 +428,23 @@ rule bwa_index:
         "bwa index {input} 2>> {output.log}.err | tee -a {output.log}.log || true ; "
         "touch {output}"
 
+rule blastn:
+    input:
+        rules.shovill.output.file
+    output:
+        tsv="blast/{sample}.tsv",
+        log=temp("logs/blastn/{sample}")
+    threads:
+        10
+    singularity:
+        "docker://ncbi/blast:2.9.0"
+    shell:
+        "date >> {output.log}.log ; " # time stamp
+        "blastn -version >> {output.log}.log ; " # version of blastn
+        "echo \"The blastdb location is $BLASTDB\" >> {output.log}.log ; "
+        "blastn -query {input} -out {output.tsv} -num_threads {threads} -db /blast/blastdb/nt -outfmt '6 qseqid staxids bitscore std' -max_target_seqs 10 -max_hsps 1 -evalue 1e-25 2>> {output.log}.log | tee -a {output.log}.err || true ; "
+        "touch {output}"
+
 rule bwa:
     input:
         contig=rules.shovill.output.file,
@@ -449,23 +466,6 @@ rule bwa:
         "samtools --version >> {output.log}.log ; " # version of samtools
         "if [ -s \"{input.test}\" ] ; then bwa mem -t {threads} {input.contig} {input.read1} {input.read2} 2>> {output.log}.err | samtools sort -o {output.bam} 2>> {output.log}.err > {output.bam} || true ; fi ; " # the if statement is for those without a blast nt database
         "samtools index {output.bam} 2>> {output.log}.err | tee -a {output.log}.log || true ; "
-        "touch {output}"
-
-rule blastn:
-    input:
-        rules.shovill.output.file
-    output:
-        tsv="blast/{sample}.tsv",
-        log=temp("logs/blastn/{sample}")
-    threads:
-        10
-    singularity:
-        "docker://ncbi/blast:2.9.0"
-    shell:
-        "date >> {output.log}.log ; " # time stamp
-        "blastn -version >> {output.log}.log ; " # version of blastn
-        "echo \"The blastdb location is $BLASTDB\" >> {output.log}.log ; "
-        "blastn -query {input} -out {output.tsv} -num_threads {threads} -db /blast/blastdb/nt -outfmt '6 qseqid staxids bitscore std' -max_target_seqs 10 -max_hsps 1 -evalue 1e-25 2>> {output.log}.log | tee -a {output.log}.err || true ; "
         "touch {output}"
 
 rule blobtools_create:
