@@ -187,7 +187,7 @@ done
 #echo ${STX_ABRICATE_RESULTS[@]}
 
 # creating a heatmap for the files for easy visualization
-echo "sample,fastqc,seqyclean,cg-pipeline,mash,shovill,prokka,quast,seqsero,abricate:serotypefinder,abricate:ncbi" > $out/logs/File_heatmap.csv
+echo "sample,fastqc,seqyclean,cg-pipeline,mash,shovill,prokka,quast,seqsero,abricate:serotypefinder,abricate:ncbi,blobtools" > $out/logs/File_heatmap.csv
 for sample in ${SAMPLES[@]}
 do
   sample=$sample # woot! A useless line
@@ -263,7 +263,13 @@ do
   else
     stx_file="1"
   fi
-  echo "$sample,$fastqc_file,$seqyclean_file,$cg_file,$mash_file,$shovill_file,$prokka_file,$quast_file,$seqsero_file,$serotypefinder_file,$ncbi_file" >> $out/logs/File_heatmap.csv
+  if [ -s "blobtools/$sample.blobDB.json.bestsum.species.p8.span.100.blobplot.stats.txt" ]
+  then
+    blobtools_file="1"
+  else
+    blobtools_file="0"
+  fi
+  echo "$sample,$fastqc_file,$seqyclean_file,$cg_file,$mash_file,$shovill_file,$prokka_file,$quast_file,$seqsero_file,$serotypefinder_file,$ncbi_file,$blobtools_file" >> $out/logs/File_heatmap.csv
 done
 # Getting all the results in one file
 echo "sample_id,sample,mash_result,simple_mash_result,seqsero_serotype,seqsero_profile,simple_seqsero_result,cg_cln_coverage,cg_raw_coverage,fastqc_raw_reads_1,fastqc_raw_reads_2,fastqc_clean_reads_PE1,fastqc_clean_reads_PE2,abricate_ecoh_O,abricate_ecoh_H,abricate_serotype_O,abricate_serotype_H,stxeae_result,argannot,resfinder,card,plasmidfinder,vfdb,ecoli_vf,ncbi" > run_results.csv

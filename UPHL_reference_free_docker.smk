@@ -3,7 +3,7 @@ import os
 import glob
 import shutil
 from os.path import join
-print("UPHL reference free pipeline v.2019.08.19")
+print("UPHL reference free pipeline v.0.2019.08.19")
 
 base_directory=workflow.basedir + "/URF_scripts"
 output_directory=os.getcwd()
@@ -447,7 +447,7 @@ rule bwa:
         "date >> {output.log}.log ; " # time stamp
         "echo \"bwa $(bwa 2>&1 | grep Version )\" >> {output.log}.log ; " # version of bwa
         "samtools --version >> {output.log}.log ; " # version of samtools
-        "if [ -s {input.test} ] ; then bwa mem -t {threads} {input.contig} {input.read1} {input.read2} 2>> {output.log}.err | samtools sort -o {output.bam} 2>> {output.log}.err > {output.bam} || true ; fi ; " # the if statement is for those without a blast nt database
+        "if [ -s \"{input.test}\" ] ; then bwa mem -t {threads} {input.contig} {input.read1} {input.read2} 2>> {output.log}.err | samtools sort -o {output.bam} 2>> {output.log}.err > {output.bam} || true ; fi ; " # the if statement is for those without a blast nt database
         "samtools index {output.bam} 2>> {output.log}.err | tee -a {output.log}.log || true ; "
         "touch {output}"
 
