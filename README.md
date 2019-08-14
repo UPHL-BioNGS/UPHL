@@ -11,6 +11,17 @@ This analysis allows
 
 (More information can be found at [UPHL's website](https://uphl.utah.gov/infectious-diseases/next-generation-sequencing/))
 
+# How to download this workflow:
+```
+git clone https://github.com/StaPH-B/UPHL.git
+```
+* note: to make your life easier type the following commands 
+```
+cd UPHL
+git init
+```
+and then you can `git pull` any time you need to sync your version of the workflow with the one posted here, on github.
+
 ### UPHL Reference-Free Workflow
 [UPHL_reference_free_docker.smk](UPHL_reference_free_docker.smk) is a snakemake workflow utilizing docker containers pulled via singularity to take Illumina NGS fastq files to annotated contigs. In order to utilize this workflow, both snakemake and singularity must be installed. Installation instructions can be found [here](READMEs/installation/README.md). 
 
