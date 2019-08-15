@@ -5,10 +5,10 @@ library(ggtree)
 library(treeio)
 library(seqinr)
 library(ape)
-library(ade4)
-library(gplots)
-library(ggstance)
-library(phytools)
+#library(ade4) # part of a script that is no longer used
+#library(gplots)
+#library(ggstance)
+#library(phytools)
 library(viridis)
 
 # creating the iqtree tree
