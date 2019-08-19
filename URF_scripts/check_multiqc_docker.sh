@@ -286,7 +286,7 @@ do
   echo "$sample,$fastqc_file,$seqyclean_file,$cg_file,$mash_file,$shovill_file,$prokka_file,$quast_file,$seqsero_file,$serotypefinder_file,$ncbi_file,$blobtools_file" >> $out/logs/File_heatmap.csv
 done
 # Getting all the results in one file
-echo "sample_id,sample,mash_result,simple_mash_result,seqsero_serotype,seqsero_profile,simple_seqsero_result,cg_cln_coverage,cg_raw_coverage,fastqc_raw_reads_1,fastqc_raw_reads_2,fastqc_clean_reads_PE1,fastqc_clean_reads_PE2,abricate_ecoh_O,abricate_ecoh_H,abricate_serotype_O,abricate_serotype_H,stxeae_result,argannot,resfinder,card,plasmidfinder,vfdb,ecoli_vf,ncbi,blobtools" > run_results.csv
+echo -e "sample_id\tsample\tmash_result\tsimple_mash_result\tseqsero_serotype\tseqsero_profile\tsimple_seqsero_result\tcg_cln_coverage\tcg_raw_coverage\tfastqc_raw_reads_1\tfastqc_raw_reads_2\tfastqc_clean_reads_PE1\tfastqc_clean_reads_PE2\tabricate_ecoh_O\tabricate_ecoh_H\tabricate_serotype_O\tabricate_serotype_H\tstxeae_result\targannot\tresfinder\tcard\tplasmidfinder\tvfdb\tecoli_vf\tncbi\tblobtools" > run_results.txt
 for sample in ${SAMPLES[@]}
 do
   sample_id=$(echo $sample | cut -f 1 -d "-" )
@@ -322,21 +322,21 @@ do
   ncbi_result_split=($(history -p ${NCBI_ABRICATE_RESULTS[@]} | sort | uniq | grep $sample | tr ':' ' ' ))
   ncbi=${ncbi_result_split[1]}
   blobtools=($(history -p ${BLOBTOOLS_RESULTS[@]} | sort | uniq | grep $sample | cut -f 2 -d ":" ))
-  echo "$sample_id,$sample,$mash_result,$simple_mash_result,$seqsero_serotype,$seqsero_profile,$simple_seqsero_result,$cg_cln_coverage,$cg_raw_coverage,$fastqc_raw_reads_1,$fastqc_raw_reads_2,$fastqc_clean_reads_PE1,$fastqc_clean_reads_PE2,$abricate_ecoh_O,$abricate_ecoh_H,$abricate_serotype_O,$abricate_serotype_H,$stxeae_result,$argannot,$resfinder,$card,$plasmidfinder,$vfdb,$ecoli_vf,$ncbi,$blobtools" >> run_results.csv
+  echo -e "$sample_id\t$sample\t$mash_result\t$simple_mash_result\t$seqsero_serotype\t$seqsero_profile\t$simple_seqsero_result\t$cg_cln_coverage\t$cg_raw_coverage\t$fastqc_raw_reads_1\t$fastqc_raw_reads_2\t$fastqc_clean_reads_PE1\t$fastqc_clean_reads_PE2\t$abricate_ecoh_O\t$abricate_ecoh_H\t$abricate_serotype_O\t$abricate_serotype_H\t$stxeae_result\t$argannot\t$resfinder\t$card\t$plasmidfinder\t$vfdb\t$ecoli_vf\t$ncbi\t$blobtools" >> run_results.txt
 done
 
 echo "Mash results count"
-mash_column=$(head -n 1 $out/run_results.csv | tr "," "\n" | grep -n ^"simple_mash_result" | cut -f 1 -d ":" )
-cut -f $mash_column -d "," $out/run_results.csv | awk '{if(NR>1)print}' | sed 's/.-//g' | sort | uniq -c | sort -k 1 -n | grep -v "no_result"
+mash_column=$(head -n 1 $out/run_results.txt | tr "\t" "\n" | grep -n ^"simple_mash_result" | cut -f 1 -d ":" )
+cut -f $mash_column -d "," $out/run_results.txt | awk '{if(NR>1)print}' | sed 's/.-//g' | sort | uniq -c | sort -k 1 -n | grep -v "no_result"
 
 echo "Seqsero results count"
-seqsero_column=$(head -n 1 $out/run_results.csv | tr "," "\n" | grep -n ^"simple_seqsero_result" | cut -f 1 -d ":" )
-cut -f $seqsero_column -d "," $out/run_results.csv | awk '{if(NR>1)print}' | sort | uniq -c | sort -k 1 -n | grep -v "no_result" | grep -v "not_salmonella"
+seqsero_column=$(head -n 1 $out/run_results.txt | tr "\t" "\n" | grep -n ^"simple_seqsero_result" | cut -f 1 -d ":" )
+cut -f $seqsero_column -d "," $out/run_results.txt | awk '{if(NR>1)print}' | sort | uniq -c | sort -k 1 -n | grep -v "no_result" | grep -v "not_salmonella"
 
 echo "Abricate serotype results count"
-O_serotype_column=$(head -n 1 $out/run_results.csv | tr "," "\n" | grep -n ^"abricate_serotype_O" | cut -f 1 -d ":" )
-H_serotype_column=$(head -n 1 $out/run_results.csv | tr "," "\n" | grep -n ^"abricate_serotype_H" | cut -f 1 -d ":" )
-cut -f $O_serotype_column,$H_serotype_column -d "," $out/run_results.csv | awk '{if(NR>1)print}' | sort | uniq -c |  sort -k 1 -n | grep -v "no_result" | grep -v "not_ecoli"
+O_serotype_column=$(head -n 1 $out/run_results.txt | tr "\t" "\n" | grep -n ^"abricate_serotype_O" | cut -f 1 -d ":" )
+H_serotype_column=$(head -n 1 $out/run_results.txt | tr "\t" "\n" | grep -n ^"abricate_serotype_H" | cut -f 1 -d ":" )
+cut -f $O_serotype_column,$H_serotype_column $out/run_results.csv | awk '{if(NR>1)print}' | sort | uniq -c |  sort -k 1 -n | grep -v "no_result" | grep -v "not_ecoli"
 
 date
 echo "Finding each file for each sample complete!"
