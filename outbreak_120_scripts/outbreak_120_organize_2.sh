@@ -344,9 +344,9 @@ mkdir -p $out/$run_date/serotyping_results/abricate
 echo -e "sample\treason" > $out/$run_date/logs/samples.rm
 if [ -n "$end_flag" ]
 then
-  list_of_run_result_files=($(find $search_path -maxdepth 2 -newermt $pd ! -newermt $d -name run_results_summary.txt))
+  list_of_run_result_files=($(find $search_path -maxdepth 2 -newermt $pd ! -newermt $d -name run_results*))
 else
-  list_of_run_result_files=($(find $search_path -maxdepth 2 -newermt $pd -name run_results_summary.txt))
+  list_of_run_result_files=($(find $search_path -maxdepth 2 -newermt $pd -name run_results*))
 fi
 
 if [ -z "$exclude_file" ]

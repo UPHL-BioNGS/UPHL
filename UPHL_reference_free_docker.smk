@@ -50,7 +50,8 @@ rule all:
         expand("blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.bam0.png", sample=SAMPLE),
         "blobtools/blobtools_results.txt",
         # file summary
-        "results_for_multiqc/File_heatmap.csv"
+        "results_for_multiqc/File_heatmap.csv",
+        "run_results.txt"
     singularity:
         "docker://ewels/multiqc:1.7"
     params:
@@ -598,7 +599,10 @@ rule multiqc_prep:
         "blobtools/blobtools_results.txt",
     output:
         log=temp("logs/all/all"),
-        file="results_for_multiqc/File_heatmap.csv"
+        file="results_for_multiqc/File_heatmap.csv",
+        final="results_for_multiqc/run_results_summary.txt",
+        run_results="run_results.txt"
+
     params:
         output_directory=output_directory,
         base_directory=base_directory
@@ -619,8 +623,8 @@ rule multiqc_prep:
         "ln -s {params.output_directory}/run_file_summary.txt                 {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
         "ln -s {params.output_directory}/fastqc                               {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
         # formatting for multiqc
-        "cat run_results_summary.txt | sed 's/simple_mash_result/A.simple_mash_result/g' | sed 's/simple_seqsero_result/B.simple_seqsero_result/g' | "
+        "cat {output.run_results} | sed 's/simple_mash_result/A.simple_mash_result/g' | sed 's/simple_seqsero_result/B.simple_seqsero_result/g' | "
         "sed 's/abricate_serotype_O/C.abricate_serotype_O/g' | sed 's/abricate_serotype_H/D.abricate_serotype_H/g' | sed 's/fastqc_raw_reads_2/E.fastqc_raw_reads_2/g' | "
         "sed 's/fastqc_clean_reads_PE2/F.fastqc_clean_reads_PE2/g' | sed 's/cg_raw_coverage/G.cg_raw_coverage/g' | sed 's/cg_cln_coverage/H.cg_cln_coverage/g' | "
-        "sed 's/ncbi/J.ncbi_antibiotic_resistence_genes/g' | sed 's/stxeae_result/I.stx_and_eae_virulence_factor_result/g' > results_for_multiqc/run_results_summary.txt || true ; "
+        "sed 's/ncbi/J.ncbi_antibiotic_resistence_genes/g' | sed 's/stxeae_result/I.stx_and_eae_virulence_factor_result/g' | sed 's/blobtools/J.blobtools' > results_for_multiqc/run_results_summary.txt || true ; "
         "touch {output}"
