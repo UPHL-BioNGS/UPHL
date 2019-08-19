@@ -72,7 +72,15 @@ custom_data:
     pconfig:
       id: 'blobtools_results'
       title: 'BLOBTOOLS results'
-      ylab: 'Organism counts'
+      ylab: 'Percentage of organism reads'
+  blobtools_mapping:
+    id: 'blobtools_mapping'
+    section name: 'blobtools mapped reads'
+    plot_type: 'bargraph'
+    pconfig:
+      id: 'blobtools mapping'
+      title: 'Blobtools mapping reads'
+      ylab: 'Percentage of mapped reads'
   summary_of_results:
     id: 'summary_of_results'
     section_name: 'Results Summary'
@@ -130,8 +138,8 @@ custom_data:
       J.ncbi_antibiotic_resistence_genes:
         hidden: False
       I.stx_and_eae_virulence_factor_result:
-        hidden: False
-      J.blobtools:
+        hidden: True
+      K.blobtools:
         hidden: False
   raw_clean_scatter:
     id: 'raw_clean_scatter'
@@ -198,6 +206,8 @@ sp:
     fn: 'mash_results.txt'
   blobtools_results:
     fn: 'blobtools_results.txt'
+  blobtools_mapping:
+    fn: 'blobtools_mapping.txt'
   abricate_ncbi:
     fn: 'ncbi.summary.csv'
   abricate_serotypefinder:

@@ -327,11 +327,11 @@ done
 
 echo "Mash results count"
 mash_column=$(head -n 1 $out/run_results.txt | tr "\t" "\n" | grep -n ^"simple_mash_result" | cut -f 1 -d ":" )
-cut -f $mash_column -d "," $out/run_results.txt | awk '{if(NR>1)print}' | sed 's/.-//g' | sort | uniq -c | sort -k 1 -n | grep -v "no_result"
+cut -f $mash_column $out/run_results.txt | awk '{if(NR>1)print}' | sed 's/.-//g' | sort | uniq -c | sort -k 1 -n | grep -v "no_result"
 
 echo "Seqsero results count"
 seqsero_column=$(head -n 1 $out/run_results.txt | tr "\t" "\n" | grep -n ^"simple_seqsero_result" | cut -f 1 -d ":" )
-cut -f $seqsero_column -d "," $out/run_results.txt | awk '{if(NR>1)print}' | sort | uniq -c | sort -k 1 -n | grep -v "no_result" | grep -v "not_salmonella"
+cut -f $seqsero_column $out/run_results.txt | awk '{if(NR>1)print}' | sort | uniq -c | sort -k 1 -n | grep -v "no_result" | grep -v "not_salmonella"
 
 echo "Abricate serotype results count"
 O_serotype_column=$(head -n 1 $out/run_results.txt | tr "\t" "\n" | grep -n ^"abricate_serotype_O" | cut -f 1 -d ":" )
