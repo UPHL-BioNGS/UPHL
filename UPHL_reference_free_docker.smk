@@ -3,7 +3,7 @@ import os
 import glob
 import shutil
 from os.path import join
-print("UPHL reference free pipeline v.0.2019.08.19")
+print("UPHL reference free pipeline v.0.2019.08.20")
 
 base_directory=workflow.basedir + "/URF_scripts"
 output_directory=os.getcwd()
@@ -639,5 +639,5 @@ rule multiqc_prep:
         "sed 's/cg_cln_coverage/H.cg_cln_coverage/g' | "
         "sed 's/ncbi/J.ncbi_antibiotic_resistence_genes/g' | "
         "sed 's/stxeae_result/I.stx_and_eae_virulence_factor_result/g' | "
-        "sed 's/blobtools/K.blobtools/g' > results_for_multiqc/run_results_summary.txt || true ; "
+        "sed 's/blobtools_result/K.blobtools_result/g' > results_for_multiqc/run_results_summary.txt || true ; "
         "touch {output}"

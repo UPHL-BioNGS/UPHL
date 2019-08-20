@@ -139,7 +139,7 @@ custom_data:
         hidden: False
       I.stx_and_eae_virulence_factor_result:
         hidden: True
-      K.blobtools:
+      K.blobtools_result:
         hidden: False
   raw_clean_scatter:
     id: 'raw_clean_scatter'

@@ -191,12 +191,12 @@ for sample in ${SAMPLES[@]}
 do
   if [ -f "$out/blobtools/$sample.blobDB.json.bestsum.species.p8.span.100.blobplot.stats.txt" ]
   then
-    blobtools_result=$(grep -v ^"#" $out/blobtools/$sample.blobDB.json.bestsum.species.p8.span.100.blobplot.stats.txt | tr ' ' '_' | sort -k 3,3 -h | grep -v all | tail -n 1 | cut -f 1 )
+    blobtools_result=($(grep -v ^"#" $out/blobtools/$sample.blobDB.json.bestsum.species.p8.span.100.blobplot.stats.txt | tr ' ' '_' | sort -k 3,3 -h | grep -v all | tail -n 1 | cut -f 1,13 ))
     if [ -z "$blobtools_result" ]; then blobtools_result="not_found"; fi
   else
     blobtools_result="not_found"
   fi
-  BLOBTOOLS_RESULTS=(${BLOBTOOLS_RESULTS[@]} "$sample:$blobtools_result")
+  BLOBTOOLS_RESULTS=(${BLOBTOOLS_RESULTS[@]} "$sample:${blobtools_result[0]}(${blobtools_result[1]})")
 done
 #echo ${BLOBTOOLS_RESULTS[@]}
 
@@ -286,7 +286,7 @@ do
   echo "$sample,$fastqc_file,$seqyclean_file,$cg_file,$mash_file,$shovill_file,$prokka_file,$quast_file,$seqsero_file,$serotypefinder_file,$ncbi_file,$blobtools_file" >> $out/logs/File_heatmap.csv
 done
 # Getting all the results in one file
-echo -e "sample_id\tsample\tmash_result\tsimple_mash_result\tseqsero_serotype\tseqsero_profile\tsimple_seqsero_result\tcg_cln_coverage\tcg_raw_coverage\tfastqc_raw_reads_1\tfastqc_raw_reads_2\tfastqc_clean_reads_PE1\tfastqc_clean_reads_PE2\tabricate_ecoh_O\tabricate_ecoh_H\tabricate_serotype_O\tabricate_serotype_H\tstxeae_result\targannot\tresfinder\tcard\tplasmidfinder\tvfdb\tecoli_vf\tncbi\tblobtools" > run_results.txt
+echo -e "sample_id\tsample\tmash_result\tsimple_mash_result\tseqsero_serotype\tseqsero_profile\tsimple_seqsero_result\tcg_cln_coverage\tcg_raw_coverage\tfastqc_raw_reads_1\tfastqc_raw_reads_2\tfastqc_clean_reads_PE1\tfastqc_clean_reads_PE2\tabricate_ecoh_O\tabricate_ecoh_H\tabricate_serotype_O\tabricate_serotype_H\tstxeae_result\targannot\tresfinder\tcard\tplasmidfinder\tvfdb\tecoli_vf\tncbi\tblobtools_result" > run_results.txt
 for sample in ${SAMPLES[@]}
 do
   sample_id=$(echo $sample | cut -f 1 -d "-" )
@@ -328,6 +328,10 @@ done
 echo "Mash results count"
 mash_column=$(head -n 1 $out/run_results.txt | tr "\t" "\n" | grep -n ^"simple_mash_result" | cut -f 1 -d ":" )
 cut -f $mash_column $out/run_results.txt | awk '{if(NR>1)print}' | sed 's/.-//g' | sort | uniq -c | sort -k 1 -n | grep -v "no_result"
+
+echo "Blobtools results count"
+blobtools_column=$(head -n 1 $out/run_results.txt | tr "\t" "\n" | grep -n ^"blobtools_result" | cut -f 1 -d ":" )
+cut -f $blobtools_column $out/run_results.txt | awk '{if(NR>1)print}' | sed 's/.-//g' | sed 's/(.*)//g' | sort | uniq -c | sort -k 1 -n | grep -v "no_result"
 
 echo "Seqsero results count"
 seqsero_column=$(head -n 1 $out/run_results.txt | tr "\t" "\n" | grep -n ^"simple_seqsero_result" | cut -f 1 -d ":" )
