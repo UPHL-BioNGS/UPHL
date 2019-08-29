@@ -340,7 +340,7 @@ cut -f $seqsero_column $out/run_results.txt | awk '{if(NR>1)print}' | sort | uni
 echo "Abricate serotype results count"
 O_serotype_column=$(head -n 1 $out/run_results.txt | tr "\t" "\n" | grep -n ^"abricate_serotype_O" | cut -f 1 -d ":" )
 H_serotype_column=$(head -n 1 $out/run_results.txt | tr "\t" "\n" | grep -n ^"abricate_serotype_H" | cut -f 1 -d ":" )
-cut -f $O_serotype_column,$H_serotype_column $out/run_results.csv | awk '{if(NR>1)print}' | sort | uniq -c |  sort -k 1 -n | grep -v "no_result" | grep -v "not_ecoli"
+cut -f $O_serotype_column,$H_serotype_column $out/run_results.txt | awk '{if(NR>1)print}' | sort | uniq -c |  sort -k 1 -n | grep -v "no_result" | grep -v "not_ecoli"
 
 date
 echo "Finding each file for each sample complete!"
