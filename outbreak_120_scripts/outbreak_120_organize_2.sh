@@ -347,6 +347,7 @@ then
   list_of_run_result_files=($(find $search_path -maxdepth 2 -newermt $pd ! -newermt $d -name run_results*))
 else
   list_of_run_result_files=($(find $search_path -maxdepth 2 -newermt $pd -name run_results*))
+  echo "no flag"
 fi
 
 if [ -z "$exclude_file" ]
@@ -384,7 +385,7 @@ do
       if [ -n "$gff_file" ]
       then
         mash_sero=($(echo $line | sed 's/\t/ /g' | cut -f $mash_column -d " " | sed 's/_/\t/g'))
-        seqs_sero=$(echo  $line | sed 's/\t/ /g' | cut -f $seqs_column -d " " )
+        seqs_sero=$(echo  $line | sed 's/\t/ /g' | cut -f $seqs_column -d " " | perl -pe 's/[^\w.-]+//g' | sed 's/potentialmonophasicvariantof//g' | sed 's/O5-//g')
         abrO_sero=($(echo $line | sed 's/\t/ /g' | cut -f $abrO_column -d " " | sed 's/O/ O/g' | sed 's/not_ecoli/notecoli/g' | sed 's/_/ /g'))
         abrH_sero=($(echo $line | sed 's/\t/ /g' | cut -f $abrH_column -d " " | sed 's/H/ H/g' | sed 's/not_ecoli/notecoli/g' | sed 's/_/ /g'))
         linkfile=$(echo "$sample-$run.gff")
