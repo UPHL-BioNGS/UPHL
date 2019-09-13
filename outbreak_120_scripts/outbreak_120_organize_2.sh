@@ -388,7 +388,7 @@ do
         seqs_sero=$(echo  $line | sed 's/\t/ /g' | cut -f $seqs_column -d " " | perl -pe 's/[^\w.-]+//g' | sed 's/potentialmonophasicvariantof//g' | sed 's/O5-//g')
         abrO_sero=($(echo $line | sed 's/\t/ /g' | cut -f $abrO_column -d " " | sed 's/O/ O/g' | sed 's/not_ecoli/notecoli/g' | sed 's/_/ /g'))
         abrH_sero=($(echo $line | sed 's/\t/ /g' | cut -f $abrH_column -d " " | sed 's/H/ H/g' | sed 's/not_ecoli/notecoli/g' | sed 's/_/ /g'))
-        linkfile=$(echo "$sample-$run.gff")
+
         if [ -z "${mash_sero[0]}" ] ; then mash_sero[0]="none" ; fi
         if [ -z "${mash_sero[1]}" ] ; then mash_sero[1]="none" ; fi
         if [ -z "$seqs_sero" ]      ; then seqs_sero="none"    ; fi
@@ -397,22 +397,22 @@ do
 
         mkdir -p $out/$run_date/mash_results/${mash_sero[0]}/all
         mkdir -p $out/$run_date/mash_results/${mash_sero[0]}/${mash_sero[1]}
-        ln -s $gff_file $out/$run_date/mash_results/${mash_sero[0]}/all/$linkfile 2>> $out/$run_date/logs/shortcut_overlap.txt
-        ln -s $gff_file $out/$run_date/mash_results/${mash_sero[0]}/${mash_sero[1]}/$linkfile 2>> $out/$run_date/logs/shortcut_overlap.txt
+        ln -s $gff_file $out/$run_date/mash_results/${mash_sero[0]}/all/. 2>> $out/$run_date/logs/shortcut_overlap.txt
+        ln -s $gff_file $out/$run_date/mash_results/${mash_sero[0]}/${mash_sero[1]}/. 2>> $out/$run_date/logs/shortcut_overlap.txt
 
         mkdir -p $out/$run_date/salmonella/enterica/all
         mkdir -p $out/$run_date/salmonella/enterica/$seqs_sero
-        ln -s $gff_file $out/$run_date/salmonella/enterica/all/$linkfile 2>> $out/$run_date/logs/shortcut_overlap.txt
-        ln -s $gff_file $out/$run_date/salmonella/enterica/$seqs_sero/$linkfile 2>> $out/$run_date/logs/shortcut_overlap.txt
+        ln -s $gff_file $out/$run_date/salmonella/enterica/all/. 2>> $out/$run_date/logs/shortcut_overlap.txt
+        ln -s $gff_file $out/$run_date/salmonella/enterica/$seqs_sero/. 2>> $out/$run_date/logs/shortcut_overlap.txt
 
         for O_group in ${abrO_sero[@]}
         do
           mkdir -p $out/$run_date/ecoli/$O_group/all
-          ln -s $gff_file $out/$run_date/ecoli/$O_group/all/$linkfile 2>> $out/$run_date/logs/shortcut_overlap.txt
+          ln -s $gff_file $out/$run_date/ecoli/$O_group/all/. 2>> $out/$run_date/logs/shortcut_overlap.txt
           for H_group in ${abrH_sero[@]}
           do
             mkdir -p $out/$run_date/ecoli/$O_group/$H_group
-            ln -s $gff_file $out/$run_date/ecoli/$O_group/$H_group/$linkfile 2>> $out/$run_date/logs/shortcut_overlap.txt
+            ln -s $gff_file $out/$run_date/ecoli/$O_group/$H_group/. 2>> $out/$run_date/logs/shortcut_overlap.txt
           done
         done
       else

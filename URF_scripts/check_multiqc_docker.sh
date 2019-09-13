@@ -289,7 +289,7 @@ done
 echo -e "sample_id\tsample\tmash_result\tsimple_mash_result\tseqsero_serotype\tseqsero_profile\tsimple_seqsero_result\tcg_cln_coverage\tcg_raw_coverage\tfastqc_raw_reads_1\tfastqc_raw_reads_2\tfastqc_clean_reads_PE1\tfastqc_clean_reads_PE2\tabricate_ecoh_O\tabricate_ecoh_H\tabricate_serotype_O\tabricate_serotype_H\tstxeae_result\targannot\tresfinder\tcard\tplasmidfinder\tvfdb\tecoli_vf\tncbi\tblobtools_result" > run_results.txt
 for sample in ${SAMPLES[@]}
 do
-  sample_id=$(echo $sample | cut -f 1 -d "-" )
+  sample_id=$(echo $sample | rev | cut -f 4- -d "-" | rev )
   sample=$sample # woot! A useless line
   mash_result_split=($(history -p ${MASH_RESULTS[@]} | sort | uniq | grep $sample | tr ':' ' ' ))
   mash_result=${mash_result_split[1]}
