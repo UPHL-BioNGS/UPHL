@@ -116,7 +116,7 @@ do
       if [ -z "$seqsero_serotype" ]; then seqsero_serotype="no_result"; fi
       seqsero_profile=$(grep "Predicted antigenic profile" $out/SeqSero/$sample.Seqsero_result.txt | cut -f 2 | tr ' ' '_' )
       if [ -z "$seqsero_profile" ]; then seqsero_profile="no_result"; fi
-      simple_seqsero_result=$(echo $seqsero_serotype | sed 's/potentialmonophasicvariantof//g' | sed 's/potential_monophasic_variant_of_//g' | sed 's/O5-//g' )
+      simple_seqsero_result=$(echo $seqsero_serotype | sed 's/potentialmonophasicvariantof//g' | sed 's/potential_monophasic_variant_of_//g' | sed 's/O5-//g' | sed 's/See_comments_below/Enteritidis/g' )
       if [ -z "$simple_seqsero_result" ]; then simple_seqsero_result="no_result"; fi
     else
       seqsero_serotype="no_result"
