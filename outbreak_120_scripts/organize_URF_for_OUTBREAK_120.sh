@@ -55,7 +55,7 @@ The control file needs the following columns:
 
 #----#----#----#----#----#----#----#----#----#----#----#----#----#----#----#----
 
-# default variable values
+# default variable values, mainly for Erin. Sorry!
 
 input_files=()
 exclude_file=""
@@ -447,7 +447,7 @@ do
             gff_file=$(find $search_path/$run/ALL_gff -maxdepth 1 -newermt $pd -iname $sample*.gff | head -n 1 )
             if [ -n "$gff_file" ]
             then
-              wc -l $gff_file | awk '{ if ( $1 < 10000) print $2 "\tsize_too_small"}' >> -a $out/$run_date/logs/samples.rm
+              wc -l $gff_file | awk '{ if ( $1 < 10000) print $2 "\tsize_too_small"}' >> $out/$run_date/logs/samples.rm
               wc -l $gff_file | awk '{ if ( $1 > 10000) print $2 }' | parallel ln -s {} $directory/. 2>> $out/$run_date/logs/shortcut_overlap.txt
             else
               echo -e "$sample-$run\tno_gff_in_year" >> $out/$run_date/logs/samples.rm
@@ -486,7 +486,7 @@ do
       number_of_files=$(ls $directory/*gff | wc -l )
       if (( $number_of_files < 4 ))
       then
-        echo "removing $directory due to only containing $number_of_files samples (need 4)"
+        echo "removing $directory due to only containing $number_of_files sample(s) (need 4)"
         ls $directory/*gff | awk '{ print $0 "\ttoo_few_samples" }' >> $out/$run_date/logs/samples.rm
         rm -R $directory
       fi
