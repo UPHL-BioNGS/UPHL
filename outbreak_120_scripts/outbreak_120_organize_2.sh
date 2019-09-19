@@ -13,6 +13,7 @@ Usage: ./outbreak_120_organize.sh -i /files/location -o /output/directory/
 
 A full list of options is available with
 ./outbreak_120_organize_2.sh -h
+
 "
 #----#----#----#----#----#----#----#----#----#----#----#----#----#----#----#----
 HELP="
@@ -105,7 +106,7 @@ do
     if [ ! -f "$list_of_samples" ]
     then
       echo "$list_of_samples could not be located"
-      echo $USAGE
+      echo "$USAGE"
       exit
     fi
     ;;
@@ -373,8 +374,8 @@ do
   diff_check=$(diff -q $specific_directory $cut_directory/all | grep "Only" | head -n 1 )
   if [ -z "$diff_check" ]
   then
-#    rm -R $cut_directory/all
-    rm -R $specific_directory
+    rm -R $cut_directory/all
+#    rm -R $specific_directory
     ls $cut_directory/all/*gff | awk '{ print $0 "\tdirectory_redundant" }' >> $out/$run_date/logs/samples.rm
   fi
 done
