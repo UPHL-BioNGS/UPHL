@@ -356,6 +356,11 @@ then
   ls $out/$run_date/ecoli/result/*/*gff 2>> $out/$run_date/logs/shortcut_overlap.txt | awk '{ print $0 "\tunknown_serotype" }'>> $out/$run_date/logs/samples.rm
   rm -R $out/$run_date/ecoli/result
 fi
+if [ -d "$out/$run_date/Salmonella/enterica/all" ]
+then
+  ls $out/$run_date/Salmonella/enterica/all/*gff 2>> $out/$run_date/logs/shortcut_overlap.txt | awk '{ print $0 "\tlisted_as_salmonella" }'>> $out/$run_date/logs/samples.rm
+  rm -R $out/$run_date/Salmonella/enterica/all
+fi
 
 # to avoid duplicates
 if [ -d "$out/$run_date/Salmonella/enterica" ] & [ -d "$out/$run_date/mash_results/Salmonella/enterica" ] ; then rm -R $out/$run_date/mash_results/Salmonella/enterica ; fi
