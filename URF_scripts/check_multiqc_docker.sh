@@ -118,6 +118,7 @@ do
       if [ -z "$seqsero_profile" ]; then seqsero_profile="no_result"; fi
       simple_seqsero_result=$(echo $seqsero_serotype | sed 's/potentialmonophasicvariantof//g' | sed 's/potential_monophasic_variant_of_//g' | sed 's/O5-//g' | sed 's/See_comments_below/Enteritidis/g' )
       if [ -z "$simple_seqsero_result" ]; then simple_seqsero_result="no_result"; fi
+      seqsero_serotype=$(echo $seqsero_serotype | sed 's/Enteritidis/Enteritidis(dsf+)/g' | sed 's/See_comments_below/Enteritidis(dsf-)/g' )
     else
       seqsero_serotype="no_result"
       seqsero_profile="no_result"
