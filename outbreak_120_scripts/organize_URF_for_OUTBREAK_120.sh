@@ -558,7 +558,7 @@ then
     else
       echo "gff file for $gfff_file not found. Did you include the full path?"
     fi
-  done < $control_file
+  done < <(grep -v "#" $control_file)
 elif [ -n $(find $control_path -iname "*gff" ) ]
 then
   date
