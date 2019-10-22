@@ -3,7 +3,7 @@ import os
 import glob
 import shutil
 from os.path import join
-print("UPHL reference free pipeline v.0.2019.08.19")
+print("UPHL reference free pipeline v.0.2019.08.20")
 
 base_directory=workflow.basedir + "/URF_scripts"
 output_directory=os.getcwd()
@@ -50,7 +50,8 @@ rule all:
         expand("blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.bam0.png", sample=SAMPLE),
         "blobtools/blobtools_results.txt",
         # file summary
-        "results_for_multiqc/File_heatmap.csv"
+        "results_for_multiqc/File_heatmap.csv",
+        "run_results.txt"
     singularity:
         "docker://ewels/multiqc:1.7"
     params:
@@ -527,6 +528,7 @@ rule blobtools_multiqc:
         expand("blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.stats.txt", sample=SAMPLE)
     output:
         file="blobtools/blobtools_results.txt",
+        mapping="blobtools/blobtools_mapping.txt",
         log=temp("logs/blobtools/multiqc")
     threads:
         1
@@ -542,6 +544,7 @@ rule blobtools_multiqc:
         done
         """
         "echo -e \"$header\" > {output.file} ; "
+        "echo -e \"Sample\tmapped_reads\" > {output.mapping} ; "
         "blobtools_results=($(ls blobtools/*blobplot.stats.txt | sed 's!.*/!!' | cut -d \"_\" -f 1 | cut -d '.' -f 1 | sort | uniq )) ; "
         """
         for blobtools_result in ${{blobtools_results[@]}}
@@ -553,10 +556,12 @@ rule blobtools_multiqc:
                 then
                     number=\"0\"
                 else
-                    number=$(cat blobtools/$blobtools_result*blobplot.stats.txt | tr ' ' '_' | grep $organism | cut -f 3 | head -n 1 )
+                    number=$(cat blobtools/$blobtools_result*blobplot.stats.txt | tr ' ' '_' | grep $organism | cut -f 13 | head -n 1 | sed 's/%//g' )
                 fi
                 blobtools_line=$(echo \"$blobtools_line\t$number\" )
             done
+            blobtools_mapping=$(cat blobtools/$blobtools_result*blobplot.stats.txt | tr ' ' '_' | grep all | cut -f 13 | head -n 1 | sed 's/%//g')
+            echo -e \"$blobtools_result\t$blobtools_mapping\" >> blobtools/blobtools_mapping.txt
             echo -e \"$blobtools_line\" >> blobtools/blobtools_results.txt
         done
         """
@@ -595,10 +600,14 @@ rule multiqc_prep:
         expand("blobtools/{sample}.blobDB.json", sample=SAMPLE),
         expand("blobtools/{sample}.blobDB.table.txt", sample=SAMPLE),
         expand("blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.bam0.png", sample=SAMPLE),
+        "blobtools/blobtools_mapping.txt",
         "blobtools/blobtools_results.txt",
     output:
         log=temp("logs/all/all"),
-        file="results_for_multiqc/File_heatmap.csv"
+        file="results_for_multiqc/File_heatmap.csv",
+        final="results_for_multiqc/run_results_summary.txt",
+        run_results="run_results.txt"
+
     params:
         output_directory=output_directory,
         base_directory=base_directory
@@ -610,17 +619,25 @@ rule multiqc_prep:
         "ln -s {params.output_directory}/SeqSero/Seqsero_serotype_results.txt {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
         "ln -s {params.output_directory}/mash/mash_results.txt                {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
         "ln -s {params.output_directory}/blobtools/blobtools_results.txt      {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
+        "ln -s {params.output_directory}/blobtools/blobtools_mapping.txt      {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
         "ln -s {params.output_directory}/cg-pipeline/cg-pipeline-summary.txt  {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
         "ln -s {params.output_directory}/abricate_results/*/*.summary.csv     {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
         "ln -s {params.output_directory}/quast                                {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
         "ln -s {params.output_directory}/logs/File_heatmap.csv                {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
         "ln -s {params.output_directory}/logs/raw_clean_coverage.txt          {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
         "ln -s {params.output_directory}/logs/raw_clean_scatter.csv           {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
-        "ln -s {params.output_directory}/run_file_summary.txt                 {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
+#        "ln -s {params.output_directory}/run_file_summary.txt                 {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
         "ln -s {params.output_directory}/fastqc                               {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
         # formatting for multiqc
-        "cat run_results_summary.txt | sed 's/simple_mash_result/A.simple_mash_result/g' | sed 's/simple_seqsero_result/B.simple_seqsero_result/g' | "
-        "sed 's/abricate_serotype_O/C.abricate_serotype_O/g' | sed 's/abricate_serotype_H/D.abricate_serotype_H/g' | sed 's/fastqc_raw_reads_2/E.fastqc_raw_reads_2/g' | "
-        "sed 's/fastqc_clean_reads_PE2/F.fastqc_clean_reads_PE2/g' | sed 's/cg_raw_coverage/G.cg_raw_coverage/g' | sed 's/cg_cln_coverage/H.cg_cln_coverage/g' | "
-        "sed 's/ncbi/J.ncbi_antibiotic_resistence_genes/g' | sed 's/stxeae_result/I.stx_and_eae_virulence_factor_result/g' > results_for_multiqc/run_results_summary.txt || true ; "
+        "cat {output.run_results} | sed 's/simple_mash_result/A.simple_mash_result/g' | "
+        "sed 's/simple_seqsero_result/B.simple_seqsero_result/g' | "
+        "sed 's/abricate_serotype_O/C.abricate_serotype_O/g' | "
+        "sed 's/abricate_serotype_H/D.abricate_serotype_H/g' | "
+        "sed 's/fastqc_raw_reads_2/E.fastqc_raw_reads_2/g' | "
+        "sed 's/fastqc_clean_reads_PE2/F.fastqc_clean_reads_PE2/g' | "
+        "sed 's/cg_raw_coverage/G.cg_raw_coverage/g' | "
+        "sed 's/cg_cln_coverage/H.cg_cln_coverage/g' | "
+        "sed 's/ncbi/J.ncbi_antibiotic_resistence_genes/g' | "
+        "sed 's/stxeae_result/I.stx_and_eae_virulence_factor_result/g' | "
+        "sed 's/blobtools_result/K.blobtools_result/g' > results_for_multiqc/run_results_summary.txt || true ; "
         "touch {output}"
