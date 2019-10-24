@@ -3,7 +3,7 @@ import os
 import glob
 import shutil
 from os.path import join
-print("UPHL reference free pipeline v.0.2019.08.20")
+print("UPHL reference free pipeline v.0.2019.09.30")
 
 base_directory=workflow.basedir + "/URF_scripts"
 output_directory=os.getcwd()
@@ -167,45 +167,45 @@ rule mash_dist:
         "mash dist -p {threads} -v 0 /db/RefSeqSketchesDefaults.msh {input} | sort -gk3 > {output.file} "
         "2>> {output.log}.err || true ; touch {output} "
 
-rule mash_multiqc:
-    input:
-        expand("mash/{sample}_mashdist.txt", sample=SAMPLE)
-    output:
-        file="mash/mash_results.txt",
-        log=temp("logs/mash/multiqc")
-    threads:
-        1
-    shell:
-        "date >> {output.log}.log ; " # time stamp
-        "organisms=($(cat mash/*_mashdist.txt | awk '{{ if ( $4 == 0 ) print $1 }}' | cut -f 8 -d \"-\" | sed 's/^_\(.*\)/\1/' | cut -f 1,2 -d \"_\" | cut -f 1 -d \".\" | sort | uniq -c | sort -rhk 1,1 | awk '{{ print $2 }}' )) ; "
-        "echo \"The organisms found in this run: ${{organisms[@]}}\" >> {output.log}.log ; "
-        "header=\"Sample\" ; "
-        """
-        for organism in ${{organisms[@]}}
-        do
-            header=$(echo \"$header\\t$organism\" )
-        done
-        """
-        "echo -e \"$header\" > mash/mash_results.txt ; "
-        "mash_results=($(ls mash/*_mashdist.txt | sed 's!.*/!!' | cut -d \"_\" -f 1 | cut -d '.' -f 1 | sort | uniq )) ; "
-        """
-        for mash_result in ${{mash_results[@]}}
-        do
-            mash_line=$mash_result
-            for organism in ${{organisms[@]}}
-            do
-                if [ -z \"$(grep $organism mash/$mash_result*_mashdist.txt | head -n 2 )\" ]
-                then
-                    number=\"0\"
-                else
-                    number=$(grep $organism mash/$mash_result*_mashdist.txt | awk '{{ if ( $4 == 0 ) print $1 }}' | cut -f 8 -d \"-\" | sed 's/^_\(.*\)/\1/' | cut -f 1,2 -d \"_\" | cut -f 1 -d \".\" | sort | uniq -c | grep $organism | awk '{{ print $1 }}' )
-                fi
-                mash_line=$(echo \"$mash_line\t$number\" )
-            done
-            echo -e \"$mash_line\" >> mash/mash_results.txt
-        done
-        """
-        "touch {output} "
+#rule mash_multiqc:
+#    input:
+#        expand("mash/{sample}_mashdist.txt", sample=SAMPLE)
+#    output:
+#        file="mash/mash_results.txt",
+#        log=temp("logs/mash/multiqc")
+#    threads:
+#        1
+#    shell:
+#        "date >> {output.log}.log ; " # time stamp
+#        "organisms=($(cat mash/*_mashdist.txt | awk '{{ if ( $4 == 0 ) print $1 }}' | cut -f 8 -d \"-\" | sed 's/^_\(.*\)/\1/' | cut -f 1,2 -d \"_\" | cut -f 1 -d \".\" | sort | uniq -c | sort -rhk 1,1 | awk '{{ print $2 }}' )) ; "
+#        "echo \"The organisms found in this run: ${{organisms[@]}}\" >> {output.log}.log ; "
+#        "header=\"Sample\" ; "
+#        """
+#        for organism in ${{organisms[@]}}
+#        do
+#            header=$(echo \"$header\\t$organism\" )
+#        done
+#        """
+#        "echo -e \"$header\" > mash/mash_results.txt ; "
+#        "mash_results=($(ls mash/*_mashdist.txt | sed 's!.*/!!' | cut -d \"_\" -f 1 | cut -d '.' -f 1 | sort | uniq )) ; "
+#        """
+#        for mash_result in ${{mash_results[@]}}
+#        do
+#            mash_line=$mash_result
+#            for organism in ${{organisms[@]}}
+#            do
+#                if [ -z \"$(grep $organism mash/$mash_result*_mashdist.txt | head -n 2 )\" ]
+#                then
+#                    number=\"0\"
+#                else
+#                    number=$(grep $organism mash/$mash_result*_mashdist.txt | awk '{{ if ( $4 == 0 ) print $1 }}' | cut -f 8 -d \"-\" | sed 's/^_\(.*\)/\1/' | cut -f 1,2 -d \"_\" | cut -f 1 -d \".\" | sort | uniq -c | grep $organism | awk '{{ print $1 }}' )
+#                fi
+#                mash_line=$(echo \"$mash_line\t$number\" )
+#            done
+#            echo -e \"$mash_line\" >> mash/mash_results.txt
+#        done
+#        """
+#        "touch {output} "
 
 rule prokka:
     input:
@@ -297,22 +297,22 @@ rule CG_pipeline:
         "run_assembly_readMetrics.pl {input.shuffled_fastq} --fast --numcpus {threads} -e $genome_length 2>> {output.log}.err > {output.file} "
         "|| true ; touch {output}"
 
-rule CG_pipeline_multiqc:
-    input:
-        expand("cg-pipeline/{sample}.{raw_or_clean}.out.txt", sample=SAMPLE, raw_or_clean=['raw', 'clean'])
-    output:
-        file="cg-pipeline/cg-pipeline-summary.txt",
-        log=temp("logs/cg_pipeline/multiqc")
-    threads:
-        1
-    params:
-        base_directory=base_directory,
-        output_directory=output_directory
-    shell:
-        "date >> {output.log}.log ; " # time stamp, no version
-        "grep \"avgReadLength\" cg-pipeline/*.out.txt | sort | uniq | head -n 1 | cut -f 2- -d ':' > cg-pipeline/cg-pipeline-summary.txt || true ; "
-        "grep -v \"avgReadLength\" cg-pipeline/*.out.txt | cut -f 2- -d ':' | sort | uniq >> cg-pipeline/cg-pipeline-summary.txt || true ; "
-        "touch {output} "
+#rule CG_pipeline_multiqc:
+#    input:
+#        expand("cg-pipeline/{sample}.{raw_or_clean}.out.txt", sample=SAMPLE, raw_or_clean=['raw', 'clean'])
+#    output:
+#        file="cg-pipeline/cg-pipeline-summary.txt",
+#        log=temp("logs/cg_pipeline/multiqc")
+#    threads:
+#        1
+#    params:
+#        base_directory=base_directory,
+#        output_directory=output_directory
+#    shell:
+#        "date >> {output.log}.log ; " # time stamp, no version
+#        "grep \"avgReadLength\" cg-pipeline/*.out.txt | sort | uniq | head -n 1 | cut -f 2- -d ':' > cg-pipeline/cg-pipeline-summary.txt || true ; "
+#        "grep -v \"avgReadLength\" cg-pipeline/*.out.txt | cut -f 2- -d ':' | sort | uniq >> cg-pipeline/cg-pipeline-summary.txt || true ; "
+#        "touch {output} "
 
 rule seqsero:
     input:
@@ -332,36 +332,36 @@ rule seqsero:
         "|| true ; touch {output} ; "
         "cp {output.file} {output.final}"
 
-rule seqsero_multiqc:
-    input:
-        expand("SeqSero/{sample}.Seqsero_result.txt", sample=SAMPLE)
-    output:
-        file="SeqSero/Seqsero_serotype_results.txt",
-        log=temp("logs/seqsero/multiqc")
-    params:
-        base_directory=base_directory,
-        output_directory=output_directory
-    threads:
-        1
-    shell:
-        "date >> {output.log}.log ; " # time stamp
-        "echo -e \"Sample\tInput_files\tO_antigen_prediction\tH1_antigen_prediction(fliC)\tH2_antigen_prediction(fljB)\tPredicted_antigenic_profile\tPredicted_serotype(s)\" > SeqSero/Seqsero_serotype_results_all.txt ; "
-        "RESULTS=$(ls SeqSero/*/Seqsero_result.txt) ; "
-        """
-        for result in ${{RESULTS[@]}}
-        do
-          SAMPLE=$(head -n 1 $result | awk '{{ print $3 }}' | awk -F \"_\" '{{ print $1 }}' )
-          seqsero_inputfile=$(grep \"Input files\"                 $result | cut -f 2 | tr ' ' '_' )
-          seqsero_Oantipred=$(grep \"O antigen prediction\"        $result | cut -f 2 | tr ' ' '_' )
-          seqsero_H1antpred=$(grep \"H1 antigen prediction(fliC)\" $result | cut -f 2 | tr ' ' '_' )
-          seqsero_H2antpred=$(grep \"H2 antigen prediction(fljB)\" $result | cut -f 2 | tr ' ' '_' )
-          seqsero_antigenic=$(grep \"Predicted antigenic profile\" $result | cut -f 2 | tr ' ' '_' )
-          seqsero_serotypes=$(grep \"Predicted serotype(s)\"       $result | cut -f 2 | tr ' ' '_' )
-          echo -e \"$SAMPLE\t$seqsero_inputfile\t$seqsero_Oantipred\t$seqsero_H1antpred\t$seqsero_H2antpred\t$seqsero_antigenic\t$seqsero_serotypes\" >> SeqSero/Seqsero_serotype_results_all.txt || true
-        done
-        """
-        "grep -v \"O--\" SeqSero/Seqsero_serotype_results_all.txt > SeqSero/Seqsero_serotype_results.txt || true ; "
-        "touch {output}"
+#rule seqsero_multiqc:
+#    input:
+#        expand("SeqSero/{sample}.Seqsero_result.txt", sample=SAMPLE)
+#    output:
+#        file="SeqSero/Seqsero_serotype_results.txt",
+#        log=temp("logs/seqsero/multiqc")
+#    params:
+#        base_directory=base_directory,
+#        output_directory=output_directory
+#    threads:
+#        1
+#    shell:
+#        "date >> {output.log}.log ; " # time stamp
+#        "echo -e \"Sample\tInput_files\tO_antigen_prediction\tH1_antigen_prediction(fliC)\tH2_antigen_prediction(fljB)\tPredicted_antigenic_profile\tPredicted_serotype(s)\" > SeqSero/Seqsero_serotype_results_all.txt ; "
+#        "RESULTS=$(ls SeqSero/*/Seqsero_result.txt) ; "
+#        """
+#        for result in ${{RESULTS[@]}}
+#        do
+#          SAMPLE=$(head -n 1 $result | awk '{{ print $3 }}' | awk -F \"_\" '{{ print $1 }}' )
+#          seqsero_inputfile=$(grep \"Input files\"                 $result | cut -f 2 | tr ' ' '_' )
+#          seqsero_Oantipred=$(grep \"O antigen prediction\"        $result | cut -f 2 | tr ' ' '_' )
+#          seqsero_H1antpred=$(grep \"H1 antigen prediction(fliC)\" $result | cut -f 2 | tr ' ' '_' )
+#          seqsero_H2antpred=$(grep \"H2 antigen prediction(fljB)\" $result | cut -f 2 | tr ' ' '_' )
+#          seqsero_antigenic=$(grep \"Predicted antigenic profile\" $result | cut -f 2 | tr ' ' '_' )
+#          seqsero_serotypes=$(grep \"Predicted serotype(s)\"       $result | cut -f 2 | tr ' ' '_' )
+#          echo -e \"$SAMPLE\t$seqsero_inputfile\t$seqsero_Oantipred\t$seqsero_H1antpred\t$seqsero_H2antpred\t$seqsero_antigenic\t$seqsero_serotypes\" >> SeqSero/Seqsero_serotype_results_all.txt || true
+#        done
+#        """
+#        "grep -v \"O--\" SeqSero/Seqsero_serotype_results_all.txt > SeqSero/Seqsero_serotype_results.txt || true ; "
+#        "touch {output}"
 
 rule abricate:
     input:
@@ -384,7 +384,7 @@ rule abricate_summary:
     input:
         expand("abricate_results/{database}/{database}.{sample}.out.tab", sample=SAMPLE, database=DATABASE),
     output:
-        file="abricate_results/{database}/{database}.summary.txt",
+        file="abricate_results/{database}/{database}.abricate_summary.txt",
         log=temp("logs/abricate/{database}_summary")
     threads:
         1
@@ -396,24 +396,24 @@ rule abricate_summary:
         "abricate --summary abricate_results*/{wildcards.database}/{wildcards.database}*tab > {output.file} 2>> {output.log}.err "
         "|| true ; touch {output}"
 
-rule abricate_multiqc:
-    input:
-        rules.abricate_summary.output.file
-    output:
-        file="abricate_results/{database}/{database}.summary.csv",
-        log=temp("logs/abricate/{database}_multiqc")
-    threads:
-        1
-    shell:
-        "date 2>> {output.log}.err | tee -a {output.log}.log ; "
-        "cat {input} | "
-        "sed 's/#//g' | sed 's/.tab//g' | sed \"s/{wildcards.database}.//g\" | "
-        "awk '{{ sub(\"^.*/\", \"\", $1); print}}' | "
-        "awk '{{ for (i=1;i<=NF;i++) if ($i ~ \";\" )gsub(\";.*$\",\"\",$i)g ; else continue}}{{print $0}}' | "
-        "awk '{{ $2=\"\" ; print $0 }}' | sed 's/\\t/,/g' | sed 's/ /,/g' | "
-        "sed 's/[.],/0,/g' | sed 's/,[.]/,0/g' | sed 's/,,/,/g' "
-        "> {output.file} 2>> {output.log}.err "
-        "|| true ; touch {output} "
+#rule abricate_multiqc:
+#    input:
+#        rules.abricate_summary.output.file
+#    output:
+#        file="abricate_results/{database}/{database}.summary.csv",
+#        log=temp("logs/abricate/{database}_multiqc")
+#    threads:
+#        1
+#    shell:
+#        "date 2>> {output.log}.err | tee -a {output.log}.log ; "
+#        "cat {input} | "
+#        "sed 's/#//g' | sed 's/.tab//g' | sed \"s/{wildcards.database}.//g\" | "
+#        "awk '{{ sub(\"^.*/\", \"\", $1); print}}' | "
+#        "awk '{{ for (i=1;i<=NF;i++) if ($i ~ \";\" )gsub(\";.*$\",\"\",$i)g ; else continue}}{{print $0}}' | "
+#        "awk '{{ $2=\"\" ; print $0 }}' | sed 's/\\t/,/g' | sed 's/ /,/g' | "
+#        "sed 's/[.],/0,/g' | sed 's/,[.]/,0/g' | sed 's/,,/,/g' "
+#        "> {output.file} 2>> {output.log}.err "
+#        "|| true ; touch {output} "
 
 rule bwa_index:
     input:
@@ -523,49 +523,49 @@ rule blobtools_plot:
         "blobtools plot -i {input.json} -o blobtools/ -r species --format png 2>> {output.log}.err | tee -a {output.log}.log || true ; "
         "touch {output}"
 
-rule blobtools_multiqc:
-    input:
-        expand("blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.stats.txt", sample=SAMPLE)
-    output:
-        file="blobtools/blobtools_results.txt",
-        mapping="blobtools/blobtools_mapping.txt",
-        log=temp("logs/blobtools/multiqc")
-    threads:
-        1
-    shell:
-        "date >> {output.log}.log ; " # time stamp
-        "organisms=($(cut -f 1 blobtools/*blobplot.stats.txt | grep -v \"all\" | grep -v ^\"#\" | tr ' ' '_' | sort | uniq -c | sort -rhk 1,1 | awk '{{ print $2 }}' )) ; "
-        "echo \"The organisms found in this run: ${{organisms[@]}}\" >> {output.log}.log ; "
-        "header=\"Sample\" ; "
-        """
-        for organism in ${{organisms[@]}}
-        do
-            header=$(echo \"$header\\t$organism\" )
-        done
-        """
-        "echo -e \"$header\" > {output.file} ; "
-        "echo -e \"Sample\tmapped_reads\" > {output.mapping} ; "
-        "blobtools_results=($(ls blobtools/*blobplot.stats.txt | sed 's!.*/!!' | cut -d \"_\" -f 1 | cut -d '.' -f 1 | sort | uniq )) ; "
-        """
-        for blobtools_result in ${{blobtools_results[@]}}
-        do
-            blobtools_line=$blobtools_result
-            for organism in ${{organisms[@]}}
-            do
-                if [ -z \"$(cut -f 1 blobtools/$blobtools_result*blobplot.stats.txt | tr ' ' '_' | grep $organism | head -n 1 )\" ]
-                then
-                    number=\"0\"
-                else
-                    number=$(cat blobtools/$blobtools_result*blobplot.stats.txt | tr ' ' '_' | grep $organism | cut -f 13 | head -n 1 | sed 's/%//g' )
-                fi
-                blobtools_line=$(echo \"$blobtools_line\t$number\" )
-            done
-            blobtools_mapping=$(cat blobtools/$blobtools_result*blobplot.stats.txt | tr ' ' '_' | grep all | cut -f 13 | head -n 1 | sed 's/%//g')
-            echo -e \"$blobtools_result\t$blobtools_mapping\" >> blobtools/blobtools_mapping.txt
-            echo -e \"$blobtools_line\" >> blobtools/blobtools_results.txt
-        done
-        """
-        "touch {output} "
+#rule blobtools_multiqc:
+#    input:
+#        expand("blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.stats.txt", sample=SAMPLE)
+#    output:
+#        file="blobtools/blobtools_results.txt",
+#        mapping="blobtools/blobtools_mapping.txt",
+#        log=temp("logs/blobtools/multiqc")
+#    threads:
+#        1
+#    shell:
+#        "date >> {output.log}.log ; " # time stamp
+#        "organisms=($(cut -f 1 blobtools/*blobplot.stats.txt | grep -v \"all\" | grep -v ^\"#\" | tr ' ' '_' | sort | uniq -c | sort -rhk 1,1 | awk '{{ print $2 }}' )) ; "
+#        "echo \"The organisms found in this run: ${{organisms[@]}}\" >> {output.log}.log ; "
+#        "header=\"Sample\" ; "
+#        """
+#        for organism in ${{organisms[@]}}
+#        do
+#            header=$(echo \"$header\\t$organism\" )
+#        done
+#        """
+#        "echo -e \"$header\" > {output.file} ; "
+#        "echo -e \"Sample\tmapped_reads\" > {output.mapping} ; "
+#        "blobtools_results=($(ls blobtools/*blobplot.stats.txt | sed 's!.*/!!' | cut -d \"_\" -f 1 | cut -d '.' -f 1 | sort | uniq )) ; "
+#        """
+#        for blobtools_result in ${{blobtools_results[@]}}
+#        do
+#            blobtools_line=$blobtools_result
+#            for organism in ${{organisms[@]}}
+#            do
+#                if [ -z \"$(cut -f 1 blobtools/$blobtools_result*blobplot.stats.txt | tr ' ' '_' | grep $organism | head -n 1 )\" ]
+#                then
+#                    number=\"0\"
+#                else
+#                    number=$(cat blobtools/$blobtools_result*blobplot.stats.txt | tr ' ' '_' | grep $organism | cut -f 13 | head -n 1 | sed 's/%//g' )
+#                fi
+#                blobtools_line=$(echo \"$blobtools_line\t$number\" )
+#            done
+#            blobtools_mapping=$(cat blobtools/$blobtools_result*blobplot.stats.txt | tr ' ' '_' | grep all | cut -f 13 | head -n 1 | sed 's/%//g')
+#            echo -e \"$blobtools_result\t$blobtools_mapping\" >> blobtools/blobtools_mapping.txt
+#            echo -e \"$blobtools_line\" >> blobtools/blobtools_results.txt
+#        done
+#        """
+#        "touch {output} "
 
 rule multiqc_prep:
     input:
@@ -581,7 +581,7 @@ rule multiqc_prep:
         expand("ALL_assembled/{sample}_contigs.fa", sample=SAMPLE),
         # mash results
         expand("mash/{sample}_mashdist.txt", sample=SAMPLE),
-        "mash/mash_results.txt",
+#        "mash/mash_results.txt",
         # prokka results
         expand("Prokka/{sample}/{sample}.gff", sample=SAMPLE),
         expand("ALL_gff/{sample}.gff", sample=SAMPLE),
@@ -589,10 +589,10 @@ rule multiqc_prep:
         expand("quast/{sample}/report.tsv", sample=SAMPLE),
         # seqsero results
         expand("SeqSero/{sample}.Seqsero_result.txt", sample=SAMPLE),
-        "SeqSero/Seqsero_serotype_results.txt",
+#        "SeqSero/Seqsero_serotype_results.txt",
         # cg-pipeline results
         expand("cg-pipeline/{sample}.{raw_or_clean}.out.txt", sample=SAMPLE,raw_or_clean=['raw', 'clean']),
-        "cg-pipeline/cg-pipeline-summary.txt",
+#        "cg-pipeline/cg-pipeline-summary.txt",
         # abricate results
         expand("abricate_results/{database}/{database}.{sample}.out.tab", sample=SAMPLE, database=DATABASE),
         expand("abricate_results/{database}/{database}.summary.csv", database=DATABASE),
@@ -600,14 +600,13 @@ rule multiqc_prep:
         expand("blobtools/{sample}.blobDB.json", sample=SAMPLE),
         expand("blobtools/{sample}.blobDB.table.txt", sample=SAMPLE),
         expand("blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.bam0.png", sample=SAMPLE),
-        "blobtools/blobtools_mapping.txt",
-        "blobtools/blobtools_results.txt",
+#        "blobtools/blobtools_mapping.txt",
+#        "blobtools/blobtools_results.txt",
     output:
         log=temp("logs/all/all"),
         file="results_for_multiqc/File_heatmap.csv",
         final="results_for_multiqc/run_results_summary.txt",
         run_results="run_results.txt"
-
     params:
         output_directory=output_directory,
         base_directory=base_directory
@@ -616,11 +615,11 @@ rule multiqc_prep:
         # getting the results in the right places
         "{params.base_directory}/check_multiqc_docker.sh                      {params.output_directory}                       2>> {output.log}.err | tee -a {output.log}.log ; "
         "ln -s {params.output_directory}/Prokka*/*/*txt                       {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
-        "ln -s {params.output_directory}/SeqSero/Seqsero_serotype_results.txt {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
-        "ln -s {params.output_directory}/mash/mash_results.txt                {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
-        "ln -s {params.output_directory}/blobtools/blobtools_results.txt      {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
-        "ln -s {params.output_directory}/blobtools/blobtools_mapping.txt      {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
-        "ln -s {params.output_directory}/cg-pipeline/cg-pipeline-summary.txt  {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
+#        "ln -s {params.output_directory}/SeqSero/Seqsero_serotype_results.txt {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
+#        "ln -s {params.output_directory}/mash/mash_results.txt                {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
+#        "ln -s {params.output_directory}/blobtools/blobtools_results.txt      {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
+#        "ln -s {params.output_directory}/blobtools/blobtools_mapping.txt      {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
+#        "ln -s {params.output_directory}/cg-pipeline/cg-pipeline-summary.txt  {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
         "ln -s {params.output_directory}/abricate_results/*/*.summary.csv     {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
         "ln -s {params.output_directory}/quast                                {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
         "ln -s {params.output_directory}/logs/File_heatmap.csv                {params.output_directory}/results_for_multiqc/. 2>> {output.log}.err | tee -a {output.log}.log || true ; "
