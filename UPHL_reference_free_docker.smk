@@ -329,7 +329,7 @@ rule abricate:
         date | tee -a {output.log}.log {output.log}.err
         abricate --version >> {output.log}.log
         abricate --list >> {output.log}.log
-        abricate --db {wildcards.database} --threads {threads} {input} > {output.file} 2>> {output.log}.err || true
+        abricate --db {wildcards.database} --threads {threads} --minid 80 --mincov 80 {input} > {output.file} 2>> {output.log}.err || true
         touch {output}
         """
 
