@@ -56,10 +56,10 @@ rule all:
         #find abricate -size 0 -delete -print  2>> {output.log}.err | xargs echo "empty abricate files: "  >> {output.log}.err # TBD at later date
         #find mash -size 0 -delete -print      2>> {output.log}.err | xargs echo "empty mash files: "      >> {output.log}.err # TBD at later date
         #find Prokka -size 0 -delete -print    2>> {output.log}.err | xargs echo "empty prokka files: "    >> {output.log}.err # TBD at later date
+        # Coming soon? adding a pdf version to the muliqc rule
         multiqc --version >> logs/all/all.log
         multiqc -f \
             --outdir ./logs \
-            --pdf \
             --cl_config "prokka_fn_snames: True"  \
             ./abricate_results/summary \
             ./blobtools \
