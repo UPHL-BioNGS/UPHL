@@ -309,9 +309,10 @@ rule seqsero:
     shell:
         """
         date | tee -a {output.log}.log {output.log}.err
-        SeqSero.py -m 2 -d SeqSero/{wildcards.sample} -i {input} 2>> {output.log}.err >> {output.log}.log || true
+        rm -R SeqSero/{wildcards.sample} || true
+        SeqSero.py -m 2 -d SeqSero/{wildcards.sample} -i {input} #2>> {output.log}.err >> {output.log}.log || true
+        cp {output.file} {output.final} || true
         touch {output}
-        cp {output.file} {output.final}
         """
 
 rule abricate:
