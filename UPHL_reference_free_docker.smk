@@ -46,7 +46,7 @@ rule all:
     output:
         log=temp("logs/all/all")
     singularity:
-        "docker://ewels/multiqc:1.7"
+        "docker://staphb/multiqc:1.7"
     shell:
         """
         date | tee -a {output.log}.log {output.log}.err
@@ -61,6 +61,7 @@ rule all:
         multiqc -f \
             --outdir ./logs \
             --cl_config "prokka_fn_snames: True"  \
+            --pdf \
             ./abricate_results/summary \
             ./blobtools \
             ./cg-pipeline \
@@ -115,7 +116,7 @@ rule fastqc:
     threads:
         1
     singularity:
-        "docker://dukegcb/fastqc:0.11.4"
+        "docker://staphb/fastqc:0.11.8"
     shell:
         """
         date | tee -a {output.log}.log {output.log}.err
