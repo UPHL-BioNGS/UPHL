@@ -46,7 +46,7 @@ rule all:
     output:
         log=temp("logs/all/all")
     singularity:
-        "docker://ewels/multiqc:1.7"
+        "docker://staphb/multiqc:1.7"
     shell:
         """
         date | tee -a {output.log}.log {output.log}.err
@@ -61,6 +61,7 @@ rule all:
         multiqc -f \
             --outdir ./logs \
             --cl_config "prokka_fn_snames: True"  \
+            --pdf \
             ./abricate_results/summary \
             ./blobtools \
             ./cg-pipeline \
@@ -115,7 +116,7 @@ rule fastqc:
     threads:
         1
     singularity:
-        "docker://dukegcb/fastqc:0.11.4"
+        "docker://staphb/fastqc:0.11.8"
     shell:
         """
         date | tee -a {output.log}.log {output.log}.err
@@ -309,9 +310,10 @@ rule seqsero:
     shell:
         """
         date | tee -a {output.log}.log {output.log}.err
-        SeqSero.py -m 2 -d SeqSero/{wildcards.sample} -i {input} 2>> {output.log}.err >> {output.log}.log || true
+        rm -R SeqSero/{wildcards.sample} || true
+        SeqSero.py -m 2 -d SeqSero/{wildcards.sample} -i {input} #2>> {output.log}.err >> {output.log}.log || true
+        cp {output.file} {output.final} || true
         touch {output}
-        cp {output.file} {output.final}
         """
 
 rule abricate:
@@ -329,7 +331,7 @@ rule abricate:
         date | tee -a {output.log}.log {output.log}.err
         abricate --version >> {output.log}.log
         abricate --list >> {output.log}.log
-        abricate --db {wildcards.database} --threads {threads} {input} > {output.file} 2>> {output.log}.err || true
+        abricate --db {wildcards.database} --threads {threads} --minid 80 --mincov 80 {input} > {output.file} 2>> {output.log}.err || true
         touch {output}
         """
 
