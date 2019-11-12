@@ -3,8 +3,7 @@ import os
 import glob
 import shutil
 from os.path import join
-print("UPHL reference free pipeline v.0.2019.11.08")
-# This version removes all custom scripts
+print("UPHL reference free pipeline v.0.2019.11.12")
 
 SAMPLE, MIDDLE, EXTENSION = glob_wildcards('Sequencing_reads/Raw/{sample, [^_]+}_{middle}.f{extension}')
 DATABASE = [ 'ncbi', 'serotypefinder', 'vfdb' ]
