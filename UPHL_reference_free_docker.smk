@@ -3,7 +3,8 @@ import os
 import glob
 import shutil
 from os.path import join
-print("UPHL reference free pipeline v.0.2019.11.12")
+print("UPHL reference free pipeline v.0.2020.01.02")
+# Added in this version: mlst
 
 SAMPLE, MIDDLE, EXTENSION = glob_wildcards('Sequencing_reads/Raw/{sample, [^_]+}_{middle}.f{extension}')
 DATABASE = [ 'ncbi', 'serotypefinder', 'vfdb' ]
@@ -42,10 +43,12 @@ rule all:
         expand("blobtools/{sample}.blobDB.json", sample=SAMPLE),
         expand("blobtools/{sample}.blobDB.table.txt", sample=SAMPLE),
         expand("blobtools/{sample}.blobDB.json.bestsum.species.p8.span.100.blobplot.bam0.png", sample=SAMPLE),
+        # mlst schemes
+        "mlst/mlst.txt",
     output:
         log=temp("logs/all/all")
     singularity:
-        "docker://staphb/multiqc:1.7"
+        "docker://staphb/multiqc:1.8"
     shell:
         """
         date | tee -a {output.log}.log {output.log}.err
@@ -60,7 +63,6 @@ rule all:
         multiqc -f \
             --outdir ./logs \
             --cl_config "prokka_fn_snames: True"  \
-            --pdf \
             ./abricate_results/summary \
             ./blobtools \
             ./cg-pipeline \
@@ -482,5 +484,23 @@ rule blobtools_plot:
         date | tee -a {output.log}.log {output.log}.err
         echo "blobtools version $(blobtools -v)" >> {output.log}.log
         blobtools plot -i {input.json} -o blobtools/ -r species --format png 2>> {output.log}.err | tee -a {output.log}.log || true
+        touch {output}
+        """
+
+rule mlst:
+    input:
+        expand("ALL_assembled/{sample}_contigs.fa", sample=SAMPLE)
+    output:
+        file="mlst/mlst.txt",
+        log=temp("logs/mlst/mlst")
+    threads:
+        1
+    singularity:
+        "docker://staphb/mlst:2.17.6-cv1"
+    shell:
+        """
+        date | tee -a {output.log}.log {output.log}.err
+        mlst --version >> {output.log}.log
+        mlst ALL_assembled/*_contigs.fa > mlst/mlst.txt 2>> {output.log}.err || true
         touch {output}
         """
