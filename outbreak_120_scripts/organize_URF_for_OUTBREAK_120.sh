@@ -387,11 +387,7 @@ do
         file_age=$(stat -L $line | grep "Modify" | awk '{print $2}' )
         if [[ "$rd" < "$file_age" ]] ; then echo $line >> $directory/recent_samples.txt ; fi
       done < $directory/list_of_samples.txt
-      if [ ! -f $directory/recent_samples.txt ]
-      then
-        ls $directory/*gff | awk '{ print $0 "\tno_recent" }' >> $out/$run_date/logs/samples.rm
-        rm -R $directory
-      fi
+      if [ ! -f $directory/recent_samples.txt ] ; then ls $directory/*gff | awk '{ print $0 "\tno_recent" }' >> $out/$run_date/logs/samples.rm ; rm -R $directory ; fi
     fi
   fi
 done
@@ -431,63 +427,16 @@ do
     else
       date
       echo "Looking for additional samples for $directory"
-      directory_parts=($(echo $directory | rev | cut -f 1-3 -d "/" | rev | tr '/' ' '))
-      grep_options=$(echo ${directory_parts[@]} | sed 's/notecoli//g' | sed 's/ecoli/Escherichia coli/g' | sed 's/all/./g' | sed 's/mash_results//g' | sed 's/^ //g' | sed 's/ / | grep /g' )
-      result_lines=($(echo "grep \".\" $search_path/*/run_results* | grep $grep_options" | parallel {} | sort | uniq ))
-      result_files=($(history -p ${result_lines[@]} | grep $search_path | grep ":" | cut -f 1 -d ":" | sort | uniq ))
-
-      for result_file in ${result_files[@]}
+      grep_options=($(echo $directory | rev | cut -f 1-3 -d "/" | rev | tr '/' ' ' | sed 's/notecoli//g' | sed 's/ecoli/Escherichia coli/g' | sed 's/all/./g' | sed 's/mash_results//g' | sed 's/^ //g' | sed 's/ / | grep /g' ))
+      additives=($(ls -t $search_path/*/run_results* | parallel --jobs 1 grep ${grep_options[@]} {} | grep "UT-" | awk -v col="$cvrg_column" '{ if ( $col>20 ) print $2}' | head -n 20 | sort | uniq ))
+      for addition in ${additives[@]}
       do
-        cvrg_column=$(head -n 1 $result_file | tr "\t" "\n" | grep -n "cg_cln_coverage" | cut -f 1 -d ":" )
-        run=$(echo $result_file | rev | cut -f 2 -d "/" | rev )
-
-        ln -s $search_path/$run/abricate_results/ncbi/ncbi*out.tab $out/$run_date/serotyping_results/abricate/. 2>> $out/$run_date/logs/shortcut_overlap.txt
-        samples=($(echo "grep \".\" $result_file | grep $grep_options" | parallel {} | awk -v col="$cvrg_column" '{ if ( $col>20 ) print $1}' | sort | uniq ))
-        for sample in ${samples[@]}
-        do
-          if [ -n "$sample" ]
-          then
-#            echo "Looking for gff files less than a year old for $sample to put in $directory"
-            pd=$(date -d "$d - 365 days" +%Y-%m-%d)
-            gff_file=$(find $search_path/$run/ALL_gff -maxdepth 1 -newermt $pd -iname $sample*.gff | head -n 1 )
-            if [ -n "$gff_file" ]
-            then
-              wc -l $gff_file | awk '{ if ( $1 < 10000) print $2 "\tsize_too_small"}' >> $out/$run_date/logs/samples.rm
-              wc -l $gff_file | awk '{ if ( $1 > 10000) print $2 }' | parallel ln -s {} $directory/. 2>> $out/$run_date/logs/shortcut_overlap.txt
-            else
-              echo -e "$sample-$run\tno_gff_in_year" >> $out/$run_date/logs/samples.rm
-            fi
-          fi
-        done
+        gff_file=$(ls -t $search_path/*/ALL_gff/$addition*.gff | head -n 1 )
+        if [ -n "$gff_file" ]
+        then
+          wc -l $gff_file | awk '{ if ( $1 > 10000) print $2 }' | parallel ln -s {} $directory/. 2>> $out/$run_date/logs/shortcut_overlap.txt
+        fi
       done
-
-      number_of_files=$(ls $directory/*gff | wc -l )
-      if (( $number_of_files < 4 ))
-      then
-        echo "$directory still has less than four samples. Expanding search"
-        for result_file in ${result_files[@]}
-        do
-          cvrg_column=$(head -n 1 $result_file | tr "\t" "\n" | grep -n "cg_cln_coverage" | cut -f 1 -d ":" )
-          run=$(echo $result_file | rev | cut -f 2 -d "/" | rev )
-          samples=($(echo "grep \".\" $result_file | grep $grep_options" | parallel {} | awk -v col="$cvrg_column" '{ if ( $col>20 ) print $1}'| sort | uniq ))
-          for sample in ${samples[@]}
-          do
-            if [ -n "$sample" ]
-            then
-              echo "Looking for files for $sample to put in $directory"
-              gff_file=$(find $search_path/$run/ALL_gff -maxdepth 1 -iname $sample*.gff | head -n 1 )
-              if [ -n "$gff_file" ]
-              then
-                wc -l $gff_file | awk '{ if ( $1 < 10000) print $2 "\tsize_too_small"}' >> $out/$run_date/logs/samples.rm
-                wc -l $gff_file | awk '{ if ( $1 > 10000) print $2 }' | parallel ln -s {} $directory/. 2>> $out/$run_date/logs/shortcut_overlap.txt
-              else
-                echo -e "$sample-$run\tno_gff_anywhere" >> $out/$run_date/logs/samples.rm
-              fi
-            fi
-          done
-        done
-      fi # last attempt to get more gff_files
-
       number_of_files=$(ls $directory/*gff | wc -l )
       if (( $number_of_files < 4 ))
       then
@@ -495,8 +444,8 @@ do
         ls $directory/*gff | awk '{ print $0 "\ttoo_few_samples" }' >> $out/$run_date/logs/samples.rm
         rm -R $directory
       fi
-    fi # expand flag conditional
-  fi # if there are fewer than 4 samples
+    fi
+  fi
 done
 
 find $out/$run_date -type d -empty -delete
