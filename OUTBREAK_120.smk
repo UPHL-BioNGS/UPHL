@@ -3,7 +3,7 @@ from pathlib import Path
 import glob
 import os, os.path
 import fnmatch
-print("OUTBREAK_120 v.2019.1.4")
+print("OUTBREAK_120 v.0.2020.01.28")
 
 DATE=str(datetime.date.today())
 working_directory=os.getcwd()
@@ -32,25 +32,25 @@ rule all:
         expand("{analysis_type}/{genus}/{species}/GGTREE/PLOTS_IQTREE.R", zip, analysis_type=ANALYSIS_TYPE, genus=GENUS, species=SPECIES),
         expand("{analysis_type}/{genus}/{species}/GGTREE/{analysis_type}.{genus}.{species}.abricate_resistance.pdf", zip, analysis_type=ANALYSIS_TYPE, genus=GENUS, species=SPECIES),
         expand("results/{analysis_type}.{genus}.{species}.abricate_resistance.pdf", zip, analysis_type=ANALYSIS_TYPE, genus=GENUS, species=SPECIES),
-    params:
-        working_directory=working_directory,
-        base_directory=base_directory
-    threads:
-        48
-    log:
-        log="logs/all/all.log",
-        err="logs/all/all.err"
-    run:
-        # creating a table from the benchmarks
-        shell("{params.base_directory}/benchmark120_multiqc.sh {params.working_directory} 2>> {log.err} | tee -a {log.log} || true "),
-        # roary results
-        shell("{params.base_directory}/roary_multiqc.sh {params.working_directory} 2>> {log.err} | tee -a {log.log} || true "),
-        shell("{params.base_directory}/organism_multiqc.sh {params.working_directory} 2>> {log.err} | tee -a {log.log} || true "),
-        # running multiqc
-        shell("which multiqc 2>> {log.err} | tee -a {log.log}")
-        shell("multiqc --version 2>> {log.err} | tee -a {log.log}")
-        shell("cp {params.base_directory}/multiqc_config_outbreak120_snakemake.yaml multiqc_config.yaml 2>> {log.err} | tee -a {log.log} || true "),
-        shell("multiqc --outdir {params.working_directory}/logs {params.working_directory}/logs 2>> {log.err} | tee -a {log.log} || true "),
+#    params:
+#        working_directory=working_directory,
+#        base_directory=base_directory
+#    threads:
+#        48
+#    log:
+#        log="logs/all/all.log",
+#        err="logs/all/all.err"
+#    run:
+#        # creating a table from the benchmarks
+#        shell("{params.base_directory}/benchmark120_multiqc.sh {params.working_directory} 2>> {log.err} | tee -a {log.log} || true "),
+#        # roary results
+#        shell("{params.base_directory}/roary_multiqc.sh {params.working_directory} 2>> {log.err} | tee -a {log.log} || true "),
+#        shell("{params.base_directory}/organism_multiqc.sh {params.working_directory} 2>> {log.err} | tee -a {log.log} || true "),
+#        # running multiqc
+#        shell("which multiqc 2>> {log.err} | tee -a {log.log}")
+#        shell("multiqc --version 2>> {log.err} | tee -a {log.log}")
+#        shell("cp {params.base_directory}/multiqc_config_outbreak120_snakemake.yaml multiqc_config.yaml 2>> {log.err} | tee -a {log.log} || true "),
+#        shell("multiqc --outdir {params.working_directory}/logs {params.working_directory}/logs 2>> {log.err} | tee -a {log.log} || true "),
 
 rule abricate:
     input:
