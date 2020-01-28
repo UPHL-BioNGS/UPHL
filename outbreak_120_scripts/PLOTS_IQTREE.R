@@ -5,10 +5,6 @@ library(ggtree)
 library(treeio)
 library(seqinr)
 library(ape)
-#library(ade4) # part of a script that is no longer used
-#library(gplots)
-#library(ggstance)
-#library(phytools)
 library(viridis)
 
 # creating the iqtree tree
@@ -33,7 +29,7 @@ colnames(bootstrap_and_nodes) <- c("node", "bootstrap","UFboot" )
 bootstrap_and_nodes$bootstrap <- as.numeric(bootstrap_and_nodes$bootstrap)
 bootstrap_and_nodes$UFboot    <- as.numeric(bootstrap_and_nodes$UFboot)
 bootstrapped_tree <- thetree %<+% bootstrap_and_nodes
-bootstrap_tree <- bootstrapped_tree + geom_nodepoint(aes(subset = as.numeric (bootstrap) > 70, color = bootstrap), size = 0.5) + scale_color_continuous(low="yellow", high="black") + labs(subtitle="Nodes labeled with bootstrap values") + theme(legend.position="right")
+bootstrap_tree <- bootstrapped_tree + geom_nodepoint(aes(subset = as.numeric (bootstrap) > 70, color = bootstrap), size = 0.75) + geom_treescale(fontsize=0.9) + scale_color_continuous(low="yellow", high="black") + labs(subtitle="Nodes labeled with bootstrap values") + theme(legend.position="right")
 bootstrap_tree
 ggsave("FULLPATHTOBOOTSTRAPTREEIMAGE.pdf", dpi = 900)
 ggsave("FULLPATHTOBOOTSTRAPTREEIMAGE_mqc.jpg", dpi = 900)
@@ -123,11 +119,6 @@ print("Creating heatmap with tree and nucleotide pairwise distance matrix")
 gheatmap(thetree + xlim_tree(largest_x * 1.2), reordered_distances, color = FALSE, colnames = TRUE, colnames_position = "top", colnames_angle = 90, font.size = distance_size, colnames_offset_y = 0, hjust = 0, offset = largest_x * 0.4) + labs(subtitle="Nucleotide pairwise distance matrix") + scale_fill_gradientn(colors = rev(magma(25)))
 ggsave("FULLPATHTODISTANCEIMAGE.pdf", dpi = 900, width = 4)
 ggsave("FULLPATHTODISTANCEIMAGE_mqc.jpg", dpi = 900, width = 4)
-
-print("Creating heatmap with tree and nucleotide pairwise distance matrix with limits")
-gheatmap(thetree + xlim_tree(largest_x * 1.2), reordered_distances, color = FALSE, colnames = TRUE, colnames_position = "top", colnames_angle = 90, font.size = distance_size, colnames_offset_y = 0, hjust = 0, offset = largest_x * 0.4) + labs(subtitle="Nucleotide pairwise distance matrix") + scale_fill_gradientn(colors = rev(magma(25)), limits = c( 0 , under_max ), na.value="black")
-ggsave("FULLPATHTODISTANCEIMAGE_limited.pdf", dpi = 900, width = 4)
-ggsave("FULLPATHTODISTANCEIMAGE_limited_mqc.jpg", dpi = 900, width = 4)
 
 print("Creating heatmap with tree and resistence gene presence/absence table")
 gheatmap(thetree + xlim_tree(largest_x * 1.2), resist_table, low="white", high = "black", color = FALSE, colnames = TRUE, colnames_position = "top", colnames_angle = 90, font.size = resist_size, colnames_offset_y = 0, hjust = 0, offset = largest_x * 0.4) + labs(subtitle="Resistence gene presence/absence")
