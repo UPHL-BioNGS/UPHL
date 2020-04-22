@@ -2,11 +2,9 @@
 
 println("UPHL ONT Pipeline v.20200424")
 
-//# awk -F $'\t' 'BEGIN{OFS=FS;}{$5=60;print}' primer_schemes/nCoV-2019/V3/nCoV-2019.bed > primer_schemes/nCoV-2019/V3/nCoV-2019_col5_replaced.bed
-//# bwa index /home/eriny/src/artic-ncov2019/primer_schemes/nCoV-2019/V3/nCoV-2019.reference.fasta
-//# nextflow run ~/sandbox/UPHL/COVID/Illumina_covid_V3.nf --outdir ~/
-
-println("the worflow is " + workflow.sessionId)
+//# awk -F $'\t' 'BEGIN{OFS=FS;}{$5=60;print}' artic-ncov2019/primer_schemes/nCoV-2019/V3/nCoV-2019.bed > primer_schemes/nCoV-2019/V3/nCoV-2019_col5_replaced.bed
+//# bwa index artic-ncov2019/primer_schemes/nCoV-2019/V3/nCoV-2019.reference.fasta
+//# nextflow run UPHL/COVID/Illumina_covid_V3.nf --outdir ~/
 
 params.requestedCPU = 20
 maxcpus = Runtime.runtime.availableProcessors()
