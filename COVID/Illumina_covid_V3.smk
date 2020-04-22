@@ -1,4 +1,4 @@
-print("UPHL ONT Pipeline v.20200406")
+print("UPHL ONT Pipeline v.20200413")
 # conda activate ivar
 # awk -F $'\t' 'BEGIN{OFS=FS;}{$5=60;print}' primer_schemes/nCoV-2019/V3/nCoV-2019.bed > primer_schemes/nCoV-2019/V3/nCoV-2019_col5_replaced.bed
 # bwa index /home/eriny/src/artic-ncov2019/primer_schemes/nCoV-2019/V3/nCoV-2019.reference.fasta
@@ -25,10 +25,6 @@ rule all:
         expand("covid/samtools_coverage/bwa/{sample}.txt", sample=SAMPLE),
         "covid/bedtools/multicov.txt",
         "covid/summary.txt"
-    shell:
-        """
-        /home/linuxbrew/.linuxbrew/bin/multiqc -f --outdir covid covid --dirs
-        """
 
 rule bwa:
     input:
@@ -42,6 +38,8 @@ rule bwa:
         log=temp("logs/bwa_covid/{sample}")
     params:
         reference=reference
+    singularity:
+        "docker://staphb/ivar:1.1-SC2"
     shell:
         """
         date | tee -a {output.log}.log {output.log}.err
@@ -64,6 +62,8 @@ rule ivar_trim:
         log=temp("logs/ivar_trim/{sample}")
     params:
         primer_bed=primer_bed
+    singularity:
+        "docker://staphb/ivar:1.1-SC2"
     shell:
         """
         date | tee -a {output.log}.log {output.log}.err
@@ -78,6 +78,8 @@ rule samtools_sort:
     output:
         bam="covid/sorted/{sample}.primertrim.sorted.bam",
         log=temp("logs/samtools_sort/{sample}")
+    singularity:
+        "docker://staphb/ivar:1.1-SC2"
     shell:
         """
         date | tee -a {output.log}.log {output.log}.err
@@ -95,6 +97,8 @@ rule ivar_variants:
     params:
         reference=reference,
         features=features
+    singularity:
+        "docker://staphb/ivar:1.1-SC2"
     shell:
         """
         date | tee -a {output.log}.log {output.log}.err
@@ -111,6 +115,8 @@ rule ivar_consensus:
         log=temp("logs/ivar_consensus/{sample}")
     params:
         reference=reference
+    singularity:
+        "docker://staphb/ivar:1.1-SC2"
     shell:
         """
         date | tee -a {output.log}.log {output.log}.err
@@ -131,6 +137,8 @@ rule quast:
     params:
         reference=reference,
         features=features
+    singularity:
+        "docker://staphb/ivar:1.1-SC2"
     shell:
         """
         date | tee -a {output.log}.log {output.log}.err
@@ -150,6 +158,8 @@ rule samtools_stats:
         bwa="covid/samtools_stats/bwa/{sample}.txt",
         sort="covid/samtools_stats/sort/{sample}.txt",
         log=temp("logs/samtools_stats/{sample}")
+    singularity:
+        "docker://staphb/ivar:1.1-SC2"
     shell:
         """
         date | tee -a {output.log}.log {output.log}.err
@@ -165,6 +175,8 @@ rule samtools_coverage:
     output:
         bwa="covid/samtools_coverage/bwa/{sample}.txt",
         sort="covid/samtools_coverage/sort/{sample}.txt",
+    singularity:
+        "docker://staphb/ivar:1.1-SC2"
     shell:
         """
         samtools coverage {input.bwa} -m -o {output.bwa}.hist
