@@ -70,9 +70,10 @@ process bwa {
   set val(sample), file(reads) from clean_reads
 
   output:
-  path("logs/bwa")
   tuple sample, file("covid/bwa/${sample}.sorted.bam") into bams, bams2, bams3, bams4, bams5, bams6
   file("covid/bwa/${sample}.sorted.bam.bai") into bais
+  file("logs/bwa/${sample}.${workflow.sessionId}.log")
+  file("logs/bwa/${sample}.${workflow.sessionId}.err")
 
   when:
   sample =~ samples_join
@@ -111,7 +112,8 @@ process ivar_trim {
 
   output:
   tuple sample, file("covid/trimmed/${sample}.primertrim.bam") into trimmed_bams
-  path("logs/ivar_trim")
+  file("logs/ivar_trim/${sample}.${workflow.sessionId}.log")
+  file("logs/ivar_trim/${sample}.${workflow.sessionId}.err")
 
   shell:
   '''
@@ -142,7 +144,8 @@ process samtools_sort {
   output:
   tuple sample, file("covid/sorted/${sample}.primertrim.sorted.bam") into sorted_bams, sorted_bams2, sorted_bams3, sorted_bams4, sorted_bams5
   file("covid/sorted/${sample}.primertrim.sorted.bam.bai") into sorted_bais
-  path("logs/samtools_sort")
+  file("logs/samtools_sort/${sample}.${workflow.sessionId}.log")
+  file("logs/samtools_sort/${sample}.${workflow.sessionId}.err")
 
   shell:
   '''
@@ -173,7 +176,8 @@ process ivar_variants {
 
   output:
   tuple sample, file("covid/variants/${sample}.variants.tsv") into variants
-  path("logs/ivar_variants")
+  file("logs/ivar_variants/${sample}.${workflow.sessionId}.log")
+  file("logs/ivar_variants/${sample}.${workflow.sessionId}.err")
 
   shell:
   '''
@@ -204,7 +208,8 @@ process ivar_consensus {
 
   output:
   tuple sample, file("covid/consensus/${sample}.consensus.fa") into consensus, consensus2
-  file("logs/ivar_consensus")
+  file("logs/ivar_consensus/${sample}.${workflow.sessionId}.log")
+  file("logs/ivar_consensus/${sample}.${workflow.sessionId}.err")
 
   shell:
   '''
@@ -239,7 +244,8 @@ process quast {
   output:
   tuple sample, file("covid/quast/${sample}.report.txt") into quast_results
   path("covid/quast/${sample}")
-  path("logs/quast_covid")
+  file("logs/quast_covid/${sample}.${workflow.sessionId}.log")
+  file("logs/quast_covid/${sample}.${workflow.sessionId}.err")
 
   shell:
     '''
@@ -273,7 +279,8 @@ process samtools_stats {
   output:
   file("covid/samtools_stats/bwa/${sample}.stats.txt") into samtools_stats_results
   file("covid/samtools_stats/sort/${sample}.stats.trim.txt")
-  path("logs/samtools_stats")
+  file("logs/samtools_stats/${sample}.${workflow.sessionId}.log")
+  file("logs/samtools_stats/${sample}.${workflow.sessionId}.err")
 
   shell:
   '''
@@ -309,7 +316,8 @@ process samtools_coverage {
   file("covid/samtools_coverage/bwa/${sample}.cov.hist")
   file("covid/samtools_coverage/sort/${sample}.cov.trim.txt")
   file("covid/samtools_coverage/sort/${sample}.cov.trim.hist")
-  file("logs/samtools_coverage")
+  file("logs/samtools_coverage/${sample}.${workflow.sessionId}.log")
+  file("logs/samtools_coverage/${sample}.${workflow.sessionId}.err")
 
   shell:
   '''
@@ -343,7 +351,8 @@ process bedtools {
 
   output:
   file("covid/bedtools/multicov.txt") into bedtools_results
-  path("logs/bedtools")
+  file("logs/bedtools/multicov.${workflow.sessionId}.log")
+  file("logs/bedtools/multicov.${workflow.sessionId}.err")
 
   shell:
   '''
@@ -377,7 +386,8 @@ process summary {
 
   output:
   file("covid/summary.txt")
-  path("logs/summary")
+  file("logs/summary/summary.${workflow.sessionId}.log")
+  file("logs/summary/summary.${workflow.sessionId}.err")
 
   shell:
   '''
