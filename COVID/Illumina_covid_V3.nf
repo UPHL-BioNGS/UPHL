@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 
-println("UPHL ONT Pipeline v.20200424")
+println("UPHL ONT Pipeline v.20200520")
 
 //# awk -F $'\t' 'BEGIN{OFS=FS;}{$5=60;print}' artic-ncov2019/primer_schemes/nCoV-2019/V3/nCoV-2019.bed > primer_schemes/nCoV-2019/V3/nCoV-2019_col5_replaced.bed
 //# bwa index artic-ncov2019/primer_schemes/nCoV-2019/V3/nCoV-2019.reference.fasta
@@ -14,16 +14,6 @@ if ( maxcpus < params.requestedCPU ) {
 } else {
   allcpus = params.requestedCPU
   println("Using ${params.requestedCPU} of ${maxcpus} CPUs for workflow")
-}
-
-maxmem = Math.round(Runtime.runtime.totalMemory() / 10241024)
-params.requestedMem = 200
-if ( maxmem < params.requestedMem ) {
-  allmem = maxmem.GB
-  println("Although ${params.requestedMem} GB memory were requested, only ${maxmem} were detected")
-} else {
-  allmem = params.requestedMem.GB
-  println("Using ${params.requestedMem} of ${maxmem} GB memory for workflow")
 }
 
 params.amplicon_bed = file('/home/eriny/src/artic-ncov2019/primer_schemes/nCoV-2019/V3/V3_amplicons.bed')
@@ -50,7 +40,7 @@ params.sample_file = file(params.outdir + '/covid_samples.txt' )
 if (!params.sample_file.exists()) exit 1, println "FATAL: ${params.sample_file} could not be found"
   else println "List of COVID19 samples: " + params.sample_file
 
-samples = params.sample_file.readLines()
+samples = params.sample_file.readLines()[0]
 samples_join = samples.join('|')
 
 Channel
