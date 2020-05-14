@@ -207,8 +207,13 @@ for sample in ${SAMPLES[@]}
 do
   if [ -f "$out/mlst/mlst.txt" ]
   then
-    mlst_result=($(grep $sample $out/mlst/mlst.txt | cut -f 3))
-    if [ -z "$mlst_result" ]; then mlst_result="not_found"; fi
+    mlst_results=($(grep $sample $out/mlst/mlst.txt | cut -f 2,3))
+    if [ -z "${mlst_results[0]}" ]
+    then
+      mlst_result="not_found"
+    else
+      mlst_result="MLST${mlst_results[1]},PubMLST${mlst_results[0]}"
+    fi
   else
     mlst_result="not_found"
   fi

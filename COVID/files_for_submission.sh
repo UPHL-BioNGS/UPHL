@@ -1,6 +1,6 @@
 #/bin/bash
 
-# ~/sandbox/COVID19/files_for_submission.sh $(pwd)
+# ~/sandbox/UPHL/COVID/files_for_submission.sh $(pwd)
 # out/covid/submission_files/sample_submission_id.txt should be lab_accession\tSubmission_ID\tCollection_Date
 
 out=$1
