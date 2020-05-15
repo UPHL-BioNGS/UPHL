@@ -4,7 +4,7 @@ println("UPHL ONT Pipeline v.20200520")
 
 //# awk -F $'\t' 'BEGIN{OFS=FS;}{$5=60;print}' artic-ncov2019/primer_schemes/nCoV-2019/V3/nCoV-2019.bed > primer_schemes/nCoV-2019/V3/nCoV-2019_col5_replaced.bed
 //# bwa index artic-ncov2019/primer_schemes/nCoV-2019/V3/nCoV-2019.reference.fasta
-//# nextflow run UPHL/COVID/Illumina_covid_V3.nf --outdir ~/
+//# nextflow run ~/sandbox/UPHL/COVID/Illumina_covid_V3.nf
 
 params.requestedCPU = 20
 maxcpus = Runtime.runtime.availableProcessors()
@@ -409,7 +409,7 @@ process summary {
 
       echo "$line,$human_reads,$degenerate,${cov_and_depth[0]},${cov_and_depth[1]},$amp_fail,$num_of_N" >> covid/summary.txt
 
-    done < !{params.sample_file}
+    done < <(cat !{params.sample_file} | awk '{print $1}')
   '''
 }
 
