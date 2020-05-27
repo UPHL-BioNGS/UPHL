@@ -4,7 +4,10 @@ println("UPHL ONT Pipeline v.20200520")
 
 //# awk -F $'\t' 'BEGIN{OFS=FS;}{$5=60;print}' artic-ncov2019/primer_schemes/nCoV-2019/V3/nCoV-2019.bed > primer_schemes/nCoV-2019/V3/nCoV-2019_col5_replaced.bed
 //# bwa index artic-ncov2019/primer_schemes/nCoV-2019/V3/nCoV-2019.reference.fasta
-//# nextflow run ~/sandbox/UPHL/COVID/Illumina_covid_V3.nf
+//# nextflow run ~/sandbox/UPHL/COVID/Illumina_covid_V3.nf -c /home/eriny/sandbox/UPHL/COVID/singularity.nextflow.config
+//# conda activate ivar
+//# emacs covid_samples.txt
+//# ~/sandbox/UPHL/COVID/files_for_submission.sh $(pwd)
 
 params.requestedCPU = 20
 maxcpus = Runtime.runtime.availableProcessors()
@@ -359,7 +362,7 @@ process bedtools {
 }
 
 process summary {
-  publishDir "${params.outdir}", mode: 'copy', overwrite: false
+  publishDir "${params.outdir}", mode: 'copy', overwrite: true
   tag "summary"
   echo true
   cpus 1
@@ -391,23 +394,28 @@ process summary {
 
     while read line
     do
-      human_reads=$(grep "Homo" !{params.outdir}/blobtools/$line*blobDB.table.txt | cut -f 13 ) 2>> $err_file
-      if [ -z "$human_reads" ] ; then human_reads="none" ; fi
+      sample=$(grep $line !{params.outdir}/run_results.txt | cut -f 2 | head -n 1 )
+      find_test=$(find !{params.outdir}/Sequencing_reads/QCed/. -iname "$line*" | head -n 1 )
+      if [ -n "$find_test" ]
+      then
+        human_reads=$(grep "Homo" !{params.outdir}/blobtools/$line*100.blobplot.stats.txt | cut -f 13 ) 2>> $err_file
+        if [ -z "$human_reads" ] ; then human_reads="none" ; fi
 
-      degenerate=$(grep -f ~/degenerate.txt $line*.consensus.fa | grep -v ">" | wc -l ) 2>> $err_file
-      if [ -z "$degenerate" ] ; then degenerate="none" ; fi
+        degenerate=$(grep -f ~/degenerate.txt $line*.consensus.fa | grep -v ">" | wc -l ) 2>> $err_file
+        if [ -z "$degenerate" ] ; then degenerate="none" ; fi
 
-      cov_and_depth=($(cut -f 6,7 $line*.cov.txt | tail -n 1)) 2>> $err_file
-      if [ -z "${cov_and_depth[0]}" ] ; then cov_and_depth=(0 0) ; fi
+        cov_and_depth=($(cut -f 6,7 $line*.cov.txt | tail -n 1)) 2>> $err_file
+        if [ -z "${cov_and_depth[0]}" ] ; then cov_and_depth=(0 0) ; fi
 
-      bedtools_column=$(head -n 1 multicov.txt | tr '\t' '\n' | grep -n $line | grep -v primertrim | cut -f 1 -d ":" | head -n 1 ) 2>> $err_file
-      amp_fail=$(cut -f $bedtools_column multicov.txt | awk '{{ if ( $1 < 20 ) print $0 }}' | wc -l ) 2>> $err_file
-      if [ -z "$amp_fail" ] ; then amp_fail=0 ; fi
+        bedtools_column=$(head -n 1 multicov.txt | tr '\t' '\n' | grep -n $line | grep -v primertrim | cut -f 1 -d ":" | head -n 1 ) 2>> $err_file
+        amp_fail=$(cut -f $bedtools_column multicov.txt | awk '{{ if ( $1 < 20 ) print $0 }}' | wc -l ) 2>> $err_file
+        if [ -z "$amp_fail" ] ; then amp_fail=0 ; fi
 
-      num_of_N=$(grep -o 'N' $line*.consensus.fa | wc -l ) 2>> $err_file
-      if [ -z "$num_of_N" ] ; then num_of_N=0 ; fi
+        num_of_N=$(grep -o 'N' $line*.consensus.fa | wc -l ) 2>> $err_file
+        if [ -z "$num_of_N" ] ; then num_of_N=0 ; fi
 
-      echo "$line,$human_reads,$degenerate,${cov_and_depth[0]},${cov_and_depth[1]},$amp_fail,$num_of_N" >> covid/summary.txt
+        echo "$sample,$human_reads,$degenerate,${cov_and_depth[0]},${cov_and_depth[1]},$amp_fail,$num_of_N" >> covid/summary.txt
+      fi
 
     done < <(cat !{params.sample_file} | awk '{print $1}')
   '''
