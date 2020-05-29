@@ -19,21 +19,23 @@ if ( maxcpus < params.requestedCPU ) {
   println("Using ${params.requestedCPU} of ${maxcpus} CPUs for workflow")
 }
 
-params.amplicon_bed = file('/home/eriny/src/artic-ncov2019/primer_schemes/nCoV-2019/V3/V3_amplicons.bed')
-if (!params.amplicon_bed.exists()) exit 1, println "FATAL: ${params.amplicon_bed} could not be found"
-  else println "bed for Artic V3 amplicons start and stop: " + params.amplicon_bed
+params.artic_version = 'V3'
 
-params.reference_genome = file('/home/eriny/src/artic-ncov2019/primer_schemes/nCoV-2019/V3/nCoV-2019.reference.fasta')
+params.amplicon_bed = file("/home/eriny/src/artic-ncov2019/primer_schemes/nCoV-2019/${params.artic_version}/${params.artic_version}_amplicons.bed")
+if (!params.amplicon_bed.exists()) exit 1, println "FATAL: ${params.amplicon_bed} could not be found"
+  else println "bed for Artic ${params.artic_version} amplicons start and stop: " + params.amplicon_bed
+
+params.reference_genome = file("/home/eriny/src/artic-ncov2019/primer_schemes/nCoV-2019/${params.artic_version}/nCoV-2019.reference.fasta")
 if (!params.reference_genome.exists()) exit 1, println "FATAL: ${params.reference_genome} could not be found"
   else println "Reference genome for SARS-CoV-2: " + params.reference_genome
 
-params.gff_file = file('/home/eriny/src/artic-ncov2019/primer_schemes/nCoV-2019/V3/GCF_009858895.2_ASM985889v3_genomic.gff')
+params.gff_file = file("/home/eriny/src/artic-ncov2019/primer_schemes/nCoV-2019/${params.artic_version}/GCF_009858895.2_ASM985889v3_genomic.gff")
 if (!params.gff_file.exists()) exit 1, println "FATAL: ${params.gff_file} could not be found"
   else println "gff for SARS-CoV-2: " + params.gff_file
 
-params.primer_bed = file('/home/eriny/src/artic-ncov2019/primer_schemes/nCoV-2019/V3/nCoV-2019_col5_replaced.bed')
+params.primer_bed = file("/home/eriny/src/artic-ncov2019/primer_schemes/nCoV-2019/${params.artic_version}/nCoV-2019_col5_replaced.bed")
 if (!params.primer_bed.exists()) exit 1, println "FATAL: ${params.primer_bed} could not be found"
-  else println "bed for Artic V3 primer sequences: " + params.primer_bed
+  else println "bed for Artic ${params.artic_version} primer sequences: " + params.primer_bed
 
 params.outdir = workflow.launchDir
 params.log_directory = params.outdir + '/logs'
@@ -57,7 +59,7 @@ process bwa {
   echo true
   cpus allcpus
 
-  beforeScript 'mkdir -p covid/bwa logs/bwa'
+  beforeScript 'mkdir -p covid/bwa logs/bwa_covid'
 
   input:
   set val(sample), file(reads) from clean_reads
@@ -65,16 +67,16 @@ process bwa {
   output:
   tuple sample, file("covid/bwa/${sample}.sorted.bam") into bams, bams2, bams3, bams4, bams5, bams6
   file("covid/bwa/${sample}.sorted.bam.bai") into bais
-  file("logs/bwa/${sample}.${workflow.sessionId}.log")
-  file("logs/bwa/${sample}.${workflow.sessionId}.err")
+  file("logs/bwa_covid/${sample}.${workflow.sessionId}.log")
+  file("logs/bwa_covid/${sample}.${workflow.sessionId}.err")
 
   when:
   sample =~ samples_join
 
   shell:
   '''
-    log_file=logs/bwa/!{sample}.!{workflow.sessionId}.log
-    err_file=logs/bwa/!{sample}.!{workflow.sessionId}.err
+    log_file=logs/bwa_covid/!{sample}.!{workflow.sessionId}.log
+    err_file=logs/bwa_covid/!{sample}.!{workflow.sessionId}.err
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
@@ -115,7 +117,7 @@ process ivar_trim {
 
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
-    ivar --version >> $log_file
+    ivar version >> $log_file
     echo !{workflow.commandLine} >> $log_file
 
     # trimming the reads
@@ -180,7 +182,7 @@ process ivar_variants {
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
     samtools --version >> $log_file
-    ivar --version >> $log_file
+    ivar version >> $log_file
     echo !{workflow.commandLine} >> $log_file
 
     samtools mpileup -A -d 600000 -B -Q 0 --reference !{params.reference_genome} !{bam} 2>> $err_file | \
@@ -211,7 +213,7 @@ process ivar_consensus {
 
     date | tee -a $log_file $err_file > /dev/null
     samtools --version >> $log_file
-    ivar --version >> $log_file
+    ivar version >> $log_file
     echo !{workflow.commandLine} >> $log_file
 
     samtools mpileup -A -d 6000000 -B -Q 0 --reference !{params.reference_genome} !{bam} 2>> $err_file | \
