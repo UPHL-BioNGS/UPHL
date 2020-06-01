@@ -1,48 +1,29 @@
 #!/usr/bin/env nextflow
 
-println("UPHL ONT Pipeline v.20200520")
+println("UPHL artic-Illumina hybrid pipeline v.20200605")
 
-//# awk -F $'\t' 'BEGIN{OFS=FS;}{$5=60;print}' artic-ncov2019/primer_schemes/nCoV-2019/V3/nCoV-2019.bed > primer_schemes/nCoV-2019/V3/nCoV-2019_col5_replaced.bed
-//# bwa index artic-ncov2019/primer_schemes/nCoV-2019/V3/nCoV-2019.reference.fasta
 //# nextflow run ~/sandbox/UPHL/COVID/Illumina_covid_V3.nf -c /home/eriny/sandbox/UPHL/COVID/singularity.nextflow.config
-//# conda activate ivar
-//# emacs covid_samples.txt
+//# nextflow run ~/sandbox/UPHL/COVID/Illumina_covid_V3.nf --primer_bed '~/src/artic-ncov2019/primer_schemes/nCoV-2019/V3/nCoV-2019.bed' --reference_genome '~/src/artic-ncov2019/primer_schemes/nCoV-2019/V3/nCoV-2019.reference.fasta' --gff_file '~/src/artic-ncov2019/primer_schemes/nCoV-2019/V3/GCF_009858895.2_ASM985889v3_genomic.gff' --amplicon_bed '~/src/artic-ncov2019/primer_schemes/nCoV-2019/V3/V3_amplicons.bed'
+//# To be used with the ivar container XXXX, this includes all artic and reference files, plus the index files are pre-indexed
+//# emacs covid_samples.txt where accession\tsubmission\tcollection_date
 //# ~/sandbox/UPHL/COVID/files_for_submission.sh $(pwd)
 
-params.requestedCPU = 20
 maxcpus = Runtime.runtime.availableProcessors()
-if ( maxcpus < params.requestedCPU ) {
-  allcpus = maxcpus
-  println("Although ${params.requestedCPU} CPUs were requested, only ${maxcpus} were detected")
-} else {
-  allcpus = params.requestedCPU
-  println("Using ${params.requestedCPU} of ${maxcpus} CPUs for workflow")
-}
+submission_script=workflow.projectDir + "/files_for_submission.sh"
 
 params.artic_version = 'V3'
 
-params.amplicon_bed = file("/home/eriny/src/artic-ncov2019/primer_schemes/nCoV-2019/${params.artic_version}/${params.artic_version}_amplicons.bed")
-if (!params.amplicon_bed.exists()) exit 1, println "FATAL: ${params.amplicon_bed} could not be found"
-  else println "bed for Artic ${params.artic_version} amplicons start and stop: " + params.amplicon_bed
-
+params.primer_bed = file("/artic-ncov2019/primer_schemes/nCoV-2019/${params.artic_version}/nCoV-2019.bed")
 params.reference_genome = file("/home/eriny/src/artic-ncov2019/primer_schemes/nCoV-2019/${params.artic_version}/nCoV-2019.reference.fasta")
-if (!params.reference_genome.exists()) exit 1, println "FATAL: ${params.reference_genome} could not be found"
-  else println "Reference genome for SARS-CoV-2: " + params.reference_genome
-
-params.gff_file = file("/home/eriny/src/artic-ncov2019/primer_schemes/nCoV-2019/${params.artic_version}/GCF_009858895.2_ASM985889v3_genomic.gff")
-if (!params.gff_file.exists()) exit 1, println "FATAL: ${params.gff_file} could not be found"
-  else println "gff for SARS-CoV-2: " + params.gff_file
-
-params.primer_bed = file("/home/eriny/src/artic-ncov2019/primer_schemes/nCoV-2019/${params.artic_version}/nCoV-2019_col5_replaced.bed")
-if (!params.primer_bed.exists()) exit 1, println "FATAL: ${params.primer_bed} could not be found"
-  else println "bed for Artic ${params.artic_version} primer sequences: " + params.primer_bed
+params.gff_file = file("/reference/GCF_009858895.2_ASM985889v3_genomic.gff")
+params.amplicon_bed = file("/artic-ncov2019/primer_schemes/nCoV-2019/${params.artic_version}/nCoV-2019_amplicon.bed")
 
 params.outdir = workflow.launchDir
 params.log_directory = params.outdir + '/logs'
 println("The files and directory for results is " + params.outdir)
 
 params.sample_file = file(params.outdir + '/covid_samples.txt' )
-if (!params.sample_file.exists()) exit 1, println "FATAL: ${params.sample_file} could not be found"
+if (!params.sample_file.exists()) exit 1, println "FATAL: ${params.sample_file} could not be found!\nPlease include a file name covid_samples.txt with the sample_id\tsubmission_id\tcollection_date at ${params.outdir}"
   else println "List of COVID19 samples: " + params.sample_file
 
 samples = params.sample_file.readLines()[0]
@@ -50,14 +31,14 @@ samples_join = samples.join('|')
 
 Channel
   .fromFilePairs("${params.outdir}/Sequencing_reads/QCed/*_clean_PE{1,2}.fastq", size: 2 )
-  .ifEmpty{ exit 1, println("No cleaned COVID reads were found") }
+  .ifEmpty{ exit 1, println("No cleaned COVID reads were found at ${params.outdir}/Sequencing_reads/QCed") }
   .set { clean_reads }
 
 process bwa {
   publishDir "${params.outdir}", mode: 'copy'
   tag "$sample"
   echo true
-  cpus allcpus
+  cpus maxcpus
 
   beforeScript 'mkdir -p covid/bwa logs/bwa_covid'
 
@@ -82,10 +63,9 @@ process bwa {
     date | tee -a $log_file $err_file > /dev/null
     echo "bwa $(bwa 2>&1 | grep Version )" >> $log_file
     samtools --version >> $log_file
-    echo !{workflow.commandLine} >> $log_file
 
     # bwa mem command
-    bwa mem -t !{allcpus} !{params.reference_genome} !{reads[0]} !{reads[1]} 2>> $err_file | \
+    bwa mem -t !{maxcpus} !{params.reference_genome} !{reads[0]} !{reads[1]} 2>> $err_file | \
       samtools sort 2>> $err_file | \
       samtools view -F 4 -o covid/bwa/!{sample}.sorted.bam 2>> $err_file >> $log_file
 
@@ -118,7 +98,6 @@ process ivar_trim {
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
     ivar version >> $log_file
-    echo !{workflow.commandLine} >> $log_file
 
     # trimming the reads
     ivar trim -e -i !{bam} -b !{params.primer_bed} -p covid/trimmed/!{sample}.primertrim 2>> $err_file >> $log_file
@@ -150,7 +129,6 @@ process samtools_sort {
     # time stamp + capturing tool versions
     date | tee -a $log_file $err_file > /dev/null
     samtools --version >> $log_file
-    echo !{workflow.commandLine} >> $log_file
 
     # sorting and indexing the trimmed bams
     samtools sort !{bam} -o covid/sorted/!{sample}.primertrim.sorted.bam 2>> $err_file >> $log_file
@@ -183,7 +161,6 @@ process ivar_variants {
     date | tee -a $log_file $err_file > /dev/null
     samtools --version >> $log_file
     ivar version >> $log_file
-    echo !{workflow.commandLine} >> $log_file
 
     samtools mpileup -A -d 600000 -B -Q 0 --reference !{params.reference_genome} !{bam} 2>> $err_file | \
       ivar variants -p covid/variants/!{sample}.variants -q 20 -t 0.6 -r !{params.reference_genome} -g !{params.gff_file} 2>> $err_file >> $log_file
@@ -202,7 +179,7 @@ process ivar_consensus {
   set val(sample), file(bam) from sorted_bams2
 
   output:
-  tuple sample, file("covid/consensus/${sample}.consensus.fa") into consensus, consensus2
+  tuple sample, file("covid/consensus/${sample}.consensus.fa") into consensus, consensus2, consensus3
   file("logs/ivar_consensus/${sample}.${workflow.sessionId}.log")
   file("logs/ivar_consensus/${sample}.${workflow.sessionId}.err")
 
@@ -214,7 +191,7 @@ process ivar_consensus {
     date | tee -a $log_file $err_file > /dev/null
     samtools --version >> $log_file
     ivar version >> $log_file
-    echo !{workflow.commandLine} >> $log_file
+
 
     samtools mpileup -A -d 6000000 -B -Q 0 --reference !{params.reference_genome} !{bam} 2>> $err_file | \
       ivar consensus -t 0.6 -p covid/consensus/!{sample}.consensus -n N 2>> $err_file >> $log_file
@@ -230,6 +207,7 @@ process quast {
   tag "$sample"
   echo true
   cpus 1
+  errorStrategy 'ignore'
 
   beforeScript 'mkdir -p covid/quast logs/quast_covid'
 
@@ -249,9 +227,9 @@ process quast {
 
       date | tee -a $log_file $err_file > /dev/null
       quast.py --version >> $log_file
-      echo !{workflow.commandLine} >> $log_file
 
-      quast.py !{fasta} -r !{params.reference_genome} --features !{params.gff_file} --ref-bam !{bam} --output-dir covid/quast/!{sample} 2>> $err_file >> $log_file
+
+      quast.py !{fasta} -r !{params.reference_genome} --ref-bam !{bam} --output-dir covid/quast/!{sample} 2>> $err_file >> $log_file
       cp covid/quast/!{sample}/report.txt covid/quast/!{sample}.report.txt
     '''
 }
@@ -284,7 +262,7 @@ process samtools_stats {
 
     date | tee -a $log_file $err_file > /dev/null
     samtools --version >> $log_file
-    echo !{workflow.commandLine} >> $log_file
+
 
     samtools stats !{bam} > covid/samtools_stats/bwa/!{sample}.stats.txt 2>> $err_file
     samtools stats !{sorted_bam} > covid/samtools_stats/sort/!{sample}.stats.trim.txt 2>> $err_file
@@ -321,7 +299,7 @@ process samtools_coverage {
 
     date | tee -a $log_file $err_file > /dev/null
     samtools --version >> $log_file
-    echo !{workflow.commandLine} >> $log_file
+
 
     samtools coverage !{bwa} -m -o covid/samtools_coverage/bwa/!{sample}.cov.hist 2>> $err_file >> $log_file
     samtools coverage !{bwa} -o covid/samtools_coverage/bwa/!{sample}.cov.txt 2>> $err_file >> $log_file
@@ -356,7 +334,7 @@ process bedtools {
 
     date | tee -a $log_file $err_file > /dev/null
     bedtools --version >> $log_file
-    echo !{workflow.commandLine} >> $log_file
+
 
     echo "primer" $(ls *bam) | tr ' ' '\t' > covid/bedtools/multicov.txt
     bedtools multicov -bams $(ls *bam) -bed !{params.amplicon_bed} | cut -f 4,6- 2>> $err_file >> covid/bedtools/multicov.txt
@@ -380,7 +358,7 @@ process summary {
   file(multicov) from bedtools_results.collect()
 
   output:
-  file("covid/summary.txt")
+  file("covid/summary.txt") into final_summary
   file("logs/summary/summary.${workflow.sessionId}.log")
   file("logs/summary/summary.${workflow.sessionId}.err")
 
@@ -390,7 +368,7 @@ process summary {
     err_file=logs/summary/summary.!{workflow.sessionId}.err
 
     date | tee -a $log_file $err_file > /dev/null
-    echo !{workflow.commandLine} >> $log_file
+
 
     echo "sample,%_Human_reads,degenerate_check,coverage,depth,failed_amplicons,num_N" > covid/summary.txt
 
@@ -421,6 +399,58 @@ process summary {
 
     done < <(cat !{params.sample_file} | awk '{print $1}')
   '''
+}
+
+process file_submission {
+  publishDir "${params.outdir}", mode: 'copy'
+  tag "$sample"
+  echo true
+  cpus 1
+
+  beforeScript 'mkdir -p covid/files_for_submission logs/submission'
+
+  input:
+  file(summary) from consensus3.collect()
+
+  output:
+
+  shell:
+  '''
+  log_file=logs/submission/submission.!{workflow.sessionId}.log
+  err_file=logs/submission/submission.!{workflow.sessionId}.err
+
+  !{submission_script} !{params.outdir}
+  '''
+}
+
+process multiqc {
+  publishDir "${params.outdir}", mode: 'copy'
+  tag "$sample"
+  echo true
+  cpus 1
+
+  beforeScript 'mkdir -p covid/multiqc logs/multiqc'
+
+  input:
+  file(file) from final_summary.collect()
+
+  output:
+    path("covid/multiqc/multiqc_data")
+    file("covid/multiqc/multiqc_report.html")
+
+  shell:
+    '''
+    log_file=logs/multiqc/multiqc.!{workflow.sessionId}.log
+    err_file=logs/multiqc/multiqc.!{workflow.sessionId}.err
+
+    date | tee -a $log_file $err_file > /dev/null
+    multiqc --version >> $log_file
+
+    multiqc -f \
+        --outdir covid/multiqc \
+        !{params.outdir}/covid
+        2>> $err_file | tee -a $log_file
+    '''
 }
 
 workflow.onComplete {
