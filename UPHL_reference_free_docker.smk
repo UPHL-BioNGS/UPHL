@@ -3,7 +3,7 @@ import os
 import glob
 import shutil
 from os.path import join
-print("UPHL reference free pipeline v.0.2020.01.02")
+print("UPHL reference free pipeline v.0.2020.06.02")
 # Added in this version: mlst
 
 SAMPLE, MIDDLE, EXTENSION = glob_wildcards('Sequencing_reads/Raw/{sample, [^_]+}_{middle}.f{extension}')
@@ -351,6 +351,7 @@ rule abricate_summary:
         date | tee -a {output.log}.log {output.log}.err
         abricate --version >> {output.log}.log
         abricate --summary abricate_results*/{wildcards.database}/{wildcards.database}*tab > {output.file} 2>> {output.log}.err || true
+        cat abricate_results/{wildcards.database}/*out.tab > abricate_results/{wildcards.database}.all.txt
         touch {output}
         """
 
