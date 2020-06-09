@@ -397,12 +397,12 @@ process seqsero2 {
   file("logs/seqsero2/${sample}.${workflow.sessionId}.err")
 
   when:
-    mash == 'Salmonella_enterica_'
+  mash == 'Salmonella_enterica'
 
   shell:
-  if (mash == 'Salmonella_enterica_' )
+//  if (mash == 'Salmonella_enterica' )
   '''
-    rm -rf seqsero2/${sample}/*
+    rm -rf seqsero2/!{sample}/*
 
     log_file=logs/seqsero2/!{sample}.!{workflow.sessionId}.log
     err_file=logs/seqsero2/!{sample}.!{workflow.sessionId}.err
@@ -419,12 +419,12 @@ process seqsero2 {
     predicted_serotype=$(grep "Predicted serotype:"	seqsero2/!{sample}/SeqSero_result.txt | cut -f 2)
     notes=$(grep "Notes:" seqsero2/!{sample}/SeqSero_result.txt | cut -f 2)
   '''
-  else
-  '''
-    antigenic_profile='not_salmonella'
-    predicted_serotype='not_salmonella'
-    notes='not_salmonella'
-  '''
+//  else
+//  '''
+//    antigenic_profile='not_salmonella'
+//    predicted_serotype='not_salmonella'
+//    notes='not_salmonella'
+//  '''
 }
 
 contigs3
@@ -445,7 +445,7 @@ process abricate {
 
   output:
   file("abricate/${db}/${db}.${sample}.out.tab") into abricate
-  tuple sample, ( db : env(abricate_result)) into abricate_results
+  tuple sample, db, env(abricate_result) into abricate_results
   file("logs/abricate/${sample}.${db}.${workflow.sessionId}.{log,err}")
 
   shell:
@@ -509,6 +509,10 @@ process abricate {
     echo $abricate_result
   '''
 }
+
+//?left = Channel.from(['X', 1], ['Y', 2], ['Z', 3], ['P', 7])
+//?right= Channel.from(['Z', 6], ['Y', 5], ['X', 4])
+//?left.join(right, remainder: true).println()
 
 process abricate_summary {
   publishDir "${params.outdir}", mode: 'copy'
