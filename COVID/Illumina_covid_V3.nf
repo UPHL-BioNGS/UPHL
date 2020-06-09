@@ -4,7 +4,7 @@ println("UPHL artic-Illumina hybrid pipeline v.20200605")
 
 //# nextflow run ~/sandbox/UPHL/COVID/Illumina_covid_V3.nf -c /home/eriny/sandbox/UPHL/COVID/singularity.nextflow.config
 //# nextflow run ~/sandbox/UPHL/COVID/Illumina_covid_V3.nf --primer_bed '~/src/artic-ncov2019/primer_schemes/nCoV-2019/V3/nCoV-2019.bed' --reference_genome '~/src/artic-ncov2019/primer_schemes/nCoV-2019/V3/nCoV-2019.reference.fasta' --gff_file '~/src/artic-ncov2019/primer_schemes/nCoV-2019/V3/GCF_009858895.2_ASM985889v3_genomic.gff' --amplicon_bed '~/src/artic-ncov2019/primer_schemes/nCoV-2019/V3/V3_amplicons.bed'
-//# To be used with the ivar container XXXX, this includes all artic and reference files, plus the index files are pre-indexed
+//# To be used with the ivar container staphb/ivar:1.2.2_artic20200528, this includes all artic and reference files, plus the index files are pre-indexed
 //# emacs covid_samples.txt where accession\tsubmission\tcollection_date
 //# ~/sandbox/UPHL/COVID/files_for_submission.sh $(pwd)
 
