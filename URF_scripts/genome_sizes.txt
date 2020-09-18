@@ -96,6 +96,7 @@ Listeria_monocytogenes:3.0
 Morganella_morganii:3.9622
 Morganella_sp:3.94136
 Mumia_flava:4.40247
+Neisseria_gonorrhoeae:2.14504
 Pantoea_ananatis:4.86928
 Pantoea_sp:4.49278
 Parabacteroides_distasonis:5.10822

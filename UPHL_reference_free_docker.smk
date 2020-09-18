@@ -8,7 +8,10 @@ print("UPHL reference free pipeline v.0.2020.06.02")
 
 SAMPLE, MIDDLE, EXTENSION = glob_wildcards('Sequencing_reads/Raw/{sample, [^_]+}_{middle}.f{extension}')
 DATABASE = [ 'ncbi', 'serotypefinder', 'vfdb' ]
-
+print(SAMPLE)
+print(MIDDLE)
+print(EXTENSION)
+print(len(SAMPLE))
 rule all:
     input:
         # copying files over
@@ -47,7 +50,7 @@ rule all:
         "mlst/mlst.txt",
     output:
         log=temp("logs/all/all")
-    singularity:
+    container:
         "docker://staphb/multiqc:1.8"
     shell:
         """
@@ -97,7 +100,7 @@ rule seqyclean:
         log=temp("logs/seqyclean/{sample}")
     threads:
         1
-    singularity:
+    container:
         "docker://staphb/seqyclean:1.10.09"
     shell:
         """
@@ -116,7 +119,7 @@ rule fastqc:
         log=temp("logs/fastqc/fastqc")
     threads:
         1
-    singularity:
+    container:
         "docker://staphb/fastqc:0.11.8"
     shell:
         """
@@ -136,7 +139,7 @@ rule shovill:
         file="shovill_result/{sample}/contigs.fa",
         final="ALL_assembled/{sample}_contigs.fa",
         log=temp("logs/shovill/{sample}")
-    singularity:
+    container:
         "docker://staphb/shovill:1.0.4"
     shell:
         """
@@ -158,7 +161,7 @@ rule mash_sketch:
         log=temp("logs/mash/{sample}_sketch")
     threads:
         1
-    singularity:
+    container:
         "docker://staphb/mash:2.1"
     shell:
         """
@@ -176,7 +179,7 @@ rule mash_dist:
         log=temp("logs/mash/{sample}_dist")
     threads:
         1
-    singularity:
+    container:
         "docker://staphb/mash:2.1"
     shell:
         """
@@ -196,7 +199,7 @@ rule prokka:
         file="Prokka/{sample}/{sample}.gff",
         final="ALL_gff/{sample}.gff",
         log=temp("logs/prokka/{sample}")
-    singularity:
+    container:
         "docker://staphb/prokka:1.14.0"
     shell:
         """
@@ -225,7 +228,7 @@ rule quast:
         log=temp("logs/quast/{sample}")
     threads:
         1
-    singularity:
+    container:
         "docker://staphb/quast:5.0.2"
     shell:
         """
@@ -244,7 +247,7 @@ rule CG_pipeline_shuffle_raw:
         log=temp("logs/cg_pipeline/{sample}_shuffle_raw")
     threads:
         1
-    singularity:
+    container:
         "docker://staphb/lyveset:2.0.1"
     shell:
         """
@@ -262,7 +265,7 @@ rule CG_pipeline_shuffle_clean:
         log=temp("logs/cg_pipeline/{sample}_shuffle_clean")
     threads:
         1
-    singularity:
+    container:
         "docker://staphb/lyveset:2.0.1"
     shell:
         """
@@ -281,7 +284,7 @@ rule CG_pipeline:
         log=temp("logs/cg_pipeline/{sample}_{raw_or_clean}")
     threads:
         48
-    singularity:
+    container:
         "docker://staphb/lyveset:2.0.1"
     shell:
         """
@@ -306,7 +309,7 @@ rule seqsero:
         log=temp("logs/seqsero/{sample}")
     threads:
         1
-    singularity:
+    container:
         "docker://staphb/seqsero:1.0.1"
     shell:
         """
@@ -325,7 +328,7 @@ rule abricate:
         log=temp("logs/abricate/{sample}.{database}")
     threads:
         5
-    singularity:
+    container:
         "docker://staphb/abricate:0.8.13s"
     shell:
         """
@@ -344,7 +347,7 @@ rule abricate_summary:
         log=temp("logs/abricate/{database}_summary")
     threads:
         1
-    singularity:
+    container:
         "docker://staphb/abricate:0.8.13s"
     shell:
         """
@@ -361,7 +364,7 @@ rule bwa_index:
     output:
         index="shovill_result/{sample}/contigs.fa.sa",
         log=temp("logs/bwa/{sample}_index")
-    singularity:
+    container:
         "docker://staphb/shovill:1.0.4"
     shell:
         """
@@ -379,7 +382,7 @@ rule blastn:
         log=temp("logs/blastn/{sample}")
     threads:
         10
-    singularity:
+    container:
         "docker://ncbi/blast:2.9.0"
     shell:
         """
@@ -410,7 +413,7 @@ rule bwa:
         bam="bwa/{sample}.sorted.bam",
         bai="bwa/{sample}.sorted.bam.bai",
         log=temp("logs/bwa/{sample}")
-    singularity:
+    container:
         "docker://staphb/shovill:1.0.4"
     shell:
         """
@@ -439,7 +442,7 @@ rule blobtools_create:
         log=temp("logs/blobtools/{sample}_create")
     threads:
         1
-    singularity:
+    container:
         "docker://chrishah/blobtools:v1.1.1"
     shell:
         """
@@ -457,7 +460,7 @@ rule blobtools_view:
         log=temp("logs/blobtools/{sample}_view")
     threads:
         1
-    singularity:
+    container:
         "docker://chrishah/blobtools:v1.1.1"
     shell:
         """
@@ -478,7 +481,7 @@ rule blobtools_plot:
         log=temp("logs/blobtools/{sample}_plot")
     threads:
         1
-    singularity:
+    container:
         "docker://chrishah/blobtools:v1.1.1"
     shell:
         """
@@ -496,7 +499,7 @@ rule mlst:
         log=temp("logs/mlst/mlst")
     threads:
         1
-    singularity:
+    container:
         "docker://staphb/mlst:2.17.6-cv1"
     shell:
         """
