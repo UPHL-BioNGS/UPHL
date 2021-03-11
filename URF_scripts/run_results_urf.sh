@@ -174,17 +174,23 @@ done
 #echo ${NCBI_ABRICATE_RESULTS[@]}
 
 STX_ABRICATE_RESULTS=()
+HVR_ABRICATE_RESULTS=()
 for sample in ${SAMPLES[@]}
 do
   if [ -f "$out/abricate_results/vfdb/vfdb.$sample.out.tab" ]
   then
     stxeae_results=($(grep $sample $out/abricate_results/vfdb/vfdb.$sample.out.tab | grep -e "stx" -e "eae" | awk '{ if ($10 > 80) print $0 }' | awk '{ if ($9 > 80) print $0 }' | cut -f 5 | sort | uniq ))
     stxeae_result=$(echo ${stxeae_results[@]} | tr ' ' '_' )
+    hyprvl_results=($(grep $sample $out/abricate_results/vfdb/vfdb.$sample.out.tab | grep -ie "peg" -ie "iro" -ie "iuc" -ie "rmp" | awk '{ if ($10 > 80) print $0 }' | awk '{ if ($9 > 80) print $0 }' | cut -f 5 | sort | uniq ))
+    hyprvl_result=$(echo ${hyprvl_results[@]} | tr ' ' '_' )
     if [ -z "$stxeae_result" ]; then stxeae_result="not_found"; fi
+    if [ -z "$hyprvl_result" ]; then hyprvl_result="not_found"; fi
   else
     stxeae_result="not_found"
+    hyprvl_result="not_found"
   fi
   STX_ABRICATE_RESULTS=(${STX_ABRICATE_RESULTS[@]} "$sample:$stxeae_result")
+  HVR_ABRICATE_RESULTS=(${HVR_ABRICATE_RESULTS[@]} "$sample:$hyprvl_result")
 done
 #echo ${STX_ABRICATE_RESULTS[@]}
 
@@ -343,7 +349,8 @@ do
   resfinder="X"
   card="X"
   plasmidfinder="X"
-  vfdb="X"
+  hvr_result_split=($(history -p ${HVR_ABRICATE_RESULTS[@]} | sort | uniq | grep $sample | tr ':' ' ' ))
+  vfdb=${hvr_result_split[1]}
   stx_result_split=($(history -p ${STX_ABRICATE_RESULTS[@]} | sort | uniq | grep $sample | tr ':' ' ' ))
   ecoli_vf=${stx_result_split[1]}
   ncbi_result_split=($(history -p ${NCBI_ABRICATE_RESULTS[@]} | sort | uniq | grep $sample | tr ':' ' ' ))
